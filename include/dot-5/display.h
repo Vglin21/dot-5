@@ -1,8 +1,8 @@
 #ifndef _DISPLAY_H_
 #define _DISPLAY_H_
 
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef _CUSTOM_TYPES_
 #define _CUSTOM_TYPES_

@@ -1,6 +1,5 @@
 #include <dot-5/display.h>
 #include <dot-5/cpu.h>
-#include <stdio.h>
 
 byte rom[] = {
     LDA_I, 0x7f,
@@ -148,13 +147,15 @@ byte rom[] = {
     JMP, 0xc,
 };
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc < 2) return 1;
+
+    if (!mem_load_rom_from_file(argv[1])) return 1;
+
     display_turn_on("DOT-5", 640, 640, DISPLAY_TYPE_LCD);
     display_set_fps(11.97);
 
     display_set_signal_size(16, 16, 0, 0);
-
-    mem_load_rom(rom, sizeof(rom));
 
     word beam = 0;
     while (!display_should_close()) {
@@ -181,34 +182,12 @@ int main() {
                     ++beam;
                 } else if ((++beam) == 320) beam = 0;
             }
-
-            printf(
-                "-------------------------\n"
-                "|00|01|02|03|04|05|06|07|\n"
-                "-------------------------\n"
-                "|%.2x|%.2x|%.2x|%.2x|%.2x|%.2x|%.2x|%.2x|\n"
-                "-------------------------\n",
-                mem_read(0),
-                mem_read(1),
-                mem_read(2),
-                mem_read(3),
-                mem_read(4),
-                mem_read(5),
-                mem_read(6),
-                mem_read(7)
-            );
         }
 
         display_update();
     }
 
     display_turn_off();
-
-    FILE *file = fopen("output.rom", "w");
-
-    fwrite(rom, 1, sizeof(rom), file);
-
-    fclose(file);
 
     return 0;
 }
