@@ -20,7 +20,7 @@ typedef enum {
     ORA_Z = 0xd,
     AND_I = 0xe,
     AND_Z = 0xf,
-} Opcodes;
+} ISA;
 
 extern void cpu_reset();
 extern byte cpu_step();

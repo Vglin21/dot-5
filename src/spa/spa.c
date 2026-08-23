@@ -46,11 +46,15 @@ bool is_hex(char hex) {
     return ('0' <= hex && hex <= '9') || ('a' <= hex && hex <= 'f');
 }
 
+bool is_int(char num) {
+    return '0' <= num && num <= '9';
+}
+
 byte get_hex() {
-    char hex[2] = {0};
+    char hex[17] = {0};
     byte hsize = 0;
-    for (; hsize < 2 && is_hex(src[pos]) && pos < size; ++hsize) hex[hsize] = src[pos++];
-    byte a = 1;
+    for (; hsize < 16 && is_hex(src[pos]) && pos < size; ++hsize) hex[hsize] = src[pos++];
+    qword a = 1;
     byte value = 0;
     for (byte c = hsize - 1; c < hsize; --c) {
         if ('0' <= hex[c] && hex[c] <= '9') value += (hex[c] - '0') * a;
@@ -58,6 +62,12 @@ byte get_hex() {
         a <<= 4;
     }
     return value;
+}
+
+byte get_int() {
+    char num[33] = {0};
+    for (byte c = 0; c < 32 && is_int(src[pos]) && pos < size; ++c) num[c] = src[pos++];
+    return (byte)atoi(num);
 }
 
 void skip_space() { while (src[pos] == ' ') ++pos; }
@@ -68,9 +78,14 @@ void get_label(Entry *entry) {
 }
 
 void get_value(Entry *entry) {
-    ++pos;
-    entry->arg = get_hex();
-    entry->has_arg = true;
+    if (src[pos] == '$') {
+        ++pos;
+        entry->arg = get_hex();
+        entry->has_arg = true;
+    } else {
+        entry->arg = get_int();
+        entry->has_arg = true;
+    }
 }
 
 void get_entry() {
@@ -81,21 +96,23 @@ void get_entry() {
         entry->imm = true;
         ++pos;
         get_value(entry);
-    } else if (src[pos] == '$') get_value(entry);
+    } else if (src[pos] == '$' || ('0' <= src[pos] && src[pos] <= '9')) get_value(entry);
     else entry->has_arg = false;
     ++entry_count;
 }
 
 void to_bin(Entry entry) {
-    for (byte c = 0; c < (sizeof(opcodes) / sizeof(Opcode)); ++c) {
+    for (byte c = 0; c < (sizeof(opcodes) / sizeof(Opcode)) && bc < 248; ++c) {
         if (!strcmp(entry.label, opcodes[c].label)) {
             Opcode opcode = opcodes[c];
             if (entry.has_arg) {
                 if (entry.imm) {
                     bin[bc++] = opcode.imm;
+                    if (bc >= 248) break;
                     bin[bc++] = entry.arg;
                 } else {
                     bin[bc++] = opcode.zp;
+                    if (bc >= 248) break;
                     bin[bc++] = entry.arg;
                 }
             } else bin[bc++] = opcode.no_arg;
@@ -148,8 +165,9 @@ int main(int argc, char *argv[]) {
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
     if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "w"))) return 1;
-
-    fwrite(bin, 1, 248, file);
+    
+    fwrite(bin, 1, bc, file);
+    printf("spa.exe: %d bytes written\n", bc);
 
     fclose(file);
 
