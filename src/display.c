@@ -20,10 +20,29 @@ static Uint64 frame_end = 0;
 static double accumulator = 0;
 
 static SDL_FRect visible_area = {0};
+static SDL_FRect display_area = {0};
+static double aspect_ratio = 0;
 
 static DisplayType display_type = 0;
 static const bool *keyboard = NULL;
 static bool should_close = true;
+
+static void __resize() {
+    dword width, height;
+    SDL_GetWindowSize(screen, &width, &height);
+
+    if (height * aspect_ratio > width) {
+        display_area.x = 0;
+        display_area.w = width;
+        display_area.h = width / aspect_ratio;
+        display_area.y = (height >> 1) - display_area.h / 2;
+    } else {
+        display_area.y = 0;
+        display_area.h = height;
+        display_area.w = height * aspect_ratio;
+        display_area.x = (width >> 1) - display_area.w / 2;
+    }
+}
 
 static void __update() {
     Uint64 frame_start = SDL_GetPerformanceCounter();
@@ -37,7 +56,16 @@ static void __update() {
         case SDL_EVENT_QUIT: should_close = true; break;
         case SDL_EVENT_KEY_DOWN:
             switch (event.key.key) {
-                case SDLK_ESCAPE: should_close = true;
+                case SDLK_ESCAPE: should_close = true; break;
+                case SDLK_F11:
+                    SDL_SetWindowFullscreen(screen, !(SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN));
+                    __resize();
+                    break;
+                case SDLK_RETURN:
+                    if (event.key.mod == SDL_KMOD_LALT || event.key.mod == SDL_KMOD_RALT) {
+                        SDL_SetWindowFullscreen(screen, !(SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN));
+                        __resize();
+                    }
             }
     }
     keyboard = SDL_GetKeyboardState(NULL);
@@ -63,8 +91,10 @@ bool display_turn_on(const char *title, dword width, dword height, DisplayType t
 
     display_type = type;
     should_close = false;
+    aspect_ratio = (double)width / height;
 
     __update();
+    __resize();
 
     return true;
 }
@@ -75,6 +105,7 @@ void display_turn_off() {
     if (screen) SDL_DestroyWindow(screen);
     if (SDL_WasInit(SDL_INIT_VIDEO)) SDL_Quit();
 }
+void display_close() { should_close = true; }
 
 bool display_should_close() { return should_close; }
 bool display_is_key_pressed(DisplayKey key) { return keyboard ? keyboard[key] : false; }
@@ -128,6 +159,11 @@ bool display_set_signal_size(word width, word height, word hblank, word vblank) 
     } else return false;
 }
 void display_set_fps(double fps) { target_time_step = 1.0 / fps; }
+void display_set_aspect_ratio(double ar) {
+    aspect_ratio = ar;
+    __resize();
+}
+void display_set_window_size(dword width, dword height) { SDL_SetWindowSize(screen, width, height); }
 
 void display_draw_pixel(dword color) {
     if (signal) {
@@ -165,7 +201,7 @@ void display_draw_pixels(dword color, size_t count) {
 
 void display_update() {
     if (screen) {
-        if (signal) SDL_RenderTexture(renderer, signal, &visible_area, NULL);
+        if (signal) SDL_RenderTexture(renderer, signal, &visible_area, &display_area);
         SDL_RenderPresent(renderer);
         SDL_RenderClear(renderer);
 
