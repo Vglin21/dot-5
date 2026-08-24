@@ -123,20 +123,20 @@ void to_bin(Entry entry) {
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("spa.exe: error: no input file\n");
+        printf("d5asm.exe: error: no input file\n");
         return 1;
     }
 
     if (!strcmp(argv[1], "--h") || !strcmp(argv[1], "--help")) {
         printf(
-            "Usage: spa.exe [source-file] [output-file-name](optional)\n"
+            "Usage: d5asm.exe [source-file] [output-file-name](optional)\n"
         );
         return 0;
     }
     
     FILE *file;
     if (!(file = fopen(argv[1], "r"))) {
-        printf("spa.exe: error: %s: no such file or directory\n", argv[1]);
+        printf("d5asm.exe: error: %s: no such file or directory\n", argv[1]);
         return 1;
     }
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     fseek(file, 0, SEEK_SET);
 
     if (!(src = (char*)malloc(size))) {
-        printf("spa.exe: error: an error occured\n");
+        printf("d5asm.exe: error: an error occured\n");
         fclose(file);
         return 1;
     }
@@ -164,10 +164,10 @@ int main(int argc, char *argv[]) {
 
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
-    if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "w"))) return 1;
+    if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "wb"))) return 1;
     
-    fwrite(bin, 1, bc, file);
-    printf("spa.exe: %d bytes written\n", bc);
+    fwrite(bin, 1, 248, file);
+    printf("d5asm.exe: %d bytes written\n", bc);
 
     fclose(file);
 

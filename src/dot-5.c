@@ -28,10 +28,22 @@ int main(int argc, char *argv[]) {
                     ++beam;
                 } else if (beam == 256) {
                     mem_write(0, 1);
-                    if (display_is_key_pressed(DISPK_RIGHT)) mem_write(0, mem_read(0) | 2);
-                    if (display_is_key_pressed(DISPK_LEFT))  mem_write(0, mem_read(0) | 4);
-                    if (display_is_key_pressed(DISPK_DOWN))  mem_write(0, mem_read(0) | 8);
-                    if (display_is_key_pressed(DISPK_UP))    mem_write(0, mem_read(0) | 16);
+                    if (
+                        display_is_key_pressed(DISPK_RIGHT) ||
+                        display_is_key_pressed(DISPK_D)
+                    ) mem_write(0, mem_read(0) | 2);
+                    if (
+                        display_is_key_pressed(DISPK_LEFT) ||
+                        display_is_key_pressed(DISPK_A)
+                    ) mem_write(0, mem_read(0) | 4);
+                    if (
+                        display_is_key_pressed(DISPK_DOWN) ||
+                        display_is_key_pressed(DISPK_S)
+                    ) mem_write(0, mem_read(0) | 8);
+                    if (
+                        display_is_key_pressed(DISPK_UP) ||
+                        display_is_key_pressed(DISPK_W)
+                    ) mem_write(0, mem_read(0) | 16);
 
                     ++beam;
                 } else if ((++beam) == 320) beam = 0;

@@ -1,15 +1,17 @@
 flags = -s -O2 -flto
 program = dot-5
 
-all:
+all: dot-5 d5asm
+
+dot-5:
 	windres ../src/dot-5.rc -O coff -o dot-5.res
 	gcc $(flags) -I ../include -o $(program) ../src/*.c dot-5.res -L ../lib -lSDL3 -mwindows
 	del dot-5.res
 
-debug:
+dot-5-debug:
 	windres ../src/dot-5.rc -O coff -o dot-5.res
 	gcc $(flags) -I ../include -o $(program) ../src/*.c -L ../lib -lSDL3
 	del dot-5.res
 
-spa:
-	gcc $(flags) -I ../include -o spa ../src/spa/spa.c
+d5asm:
+	gcc $(flags) -I ../include -o d5asm ../src/d5asm/d5asm.c
