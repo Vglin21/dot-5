@@ -4,35 +4,45 @@
 #include <dot-5/cpu.h>
 
 typedef struct {
-    char label[4];
+    char name[4];
     byte no_arg;
     byte imm;
     byte zp;
+    bool branch;
 } Opcode;
 
 typedef struct {
-    char label[4];
+    char name[4];
     byte arg;
     bool has_arg;
     bool imm;
+    char label[129];
 } Entry;
 
+typedef struct {
+    char str[129];
+    byte address;
+} Label;
+
 Opcode opcodes[] = {
-    {"inc", INC, 0,     0    },
-    {"dec", DEC, 0,     0    },
-    {"lda", 0,   LDA_I, LDA_Z},
-    {"sta", 0,   0,     STA  },
-    {"jmp", 0,   JMP,   JMP  },
-    {"beq", 0,   BEQ,   BEQ  },
-    {"bne", 0,   BNE,   BNE  },
-    {"add", 0,   ADD_I, ADD_Z},
-    {"sub", 0,   SUB_I, SUB_Z},
-    {"ora", 0,   ORA_I, ORA_Z},
-    {"and", 0,   AND_I, AND_Z}
+    {"inc", INC, 0,     0,     false},
+    {"dec", DEC, 0,     0,     false},
+    {"lda", 0,   LDA_I, LDA_Z, false},
+    {"sta", 0,   0,     STA,   false},
+    {"jmp", 0,   JMP,   JMP,   false},
+    {"beq", 0,   BEQ,   BEQ,   true },
+    {"bne", 0,   BNE,   BNE,   true },
+    {"add", 0,   ADD_I, ADD_Z, false},
+    {"sub", 0,   SUB_I, SUB_Z, false},
+    {"ora", 0,   ORA_I, ORA_Z, false},
+    {"and", 0,   AND_I, AND_Z, false}
 };
 
 Entry entries[248];
 byte entry_count = 0;
+
+Label labels[124];
+byte label_count = 0;
 
 char *src = NULL;
 dword pos = 0;
@@ -41,27 +51,37 @@ char ch = 0;
 char label[4] = {0};
 byte bin[248] = {0};
 byte bc = 0;
+bool nl = false;
 
 bool is_hex(char hex) {
-    return ('0' <= hex && hex <= '9') || ('a' <= hex && hex <= 'f');
+    return ('0' <= hex && hex <= '9') || ('a' <= hex && hex <= 'f') || ('A' <= hex && hex <= 'F');
 }
 
 bool is_int(char num) {
     return '0' <= num && num <= '9';
 }
 
+bool is_char(char ch) {
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z');
+}
+
 byte get_hex() {
     char hex[17] = {0};
     byte hsize = 0;
-    for (; hsize < 16 && is_hex(src[pos]) && pos < size; ++hsize) hex[hsize] = src[pos++];
-    qword a = 1;
-    byte value = 0;
+    qword shift = 0;
+    byte rvalue = 0;
+
+    while (hsize < 16 && is_hex(src[pos]) && pos < size)
+        hex[hsize++] = src[pos++];
+
     for (byte c = hsize - 1; c < hsize; --c) {
-        if ('0' <= hex[c] && hex[c] <= '9') value += (hex[c] - '0') * a;
-        else value += (hex[c] - 'a' + 0xa) * a;
-        a <<= 4;
+        char h = hex[c];
+        if ('0' <= h && h <= '9') rvalue += (hex[c] - '0') << shift;
+        else if ('a' <= h && h <= 'f') rvalue += (hex[c] - 'a' + 0xa) << shift;
+        else rvalue += (h - 'A' + 0xa) << shift;
+        shift += 4;
     }
-    return value;
+    return rvalue;
 }
 
 byte get_int() {
@@ -70,11 +90,13 @@ byte get_int() {
     return (byte)atoi(num);
 }
 
-void skip_space() { while (src[pos] == ' ') ++pos; }
+void skip_line() { while (src[pos] != '\n' && pos < size) ++pos; }
 
-void get_label(Entry *entry) {
-    memset(entry->label, 0, 4);
-    for (byte c = 0; c < 3 && 'a' <= src[pos] && src[pos] <= 'z' && pos < size; ++c) entry->label[c] = src[pos++];
+void skip_space() { while (src[pos] == ' ' && pos < size) ++pos; }
+
+void get_name(Entry *entry) {
+    memset(entry->name, 0, 4);
+    for (byte c = 0; c < 3 && 'a' <= src[pos] && src[pos] <= 'z' && pos < size; ++c) entry->name[c] = src[pos++];
 }
 
 void get_value(Entry *entry) {
@@ -90,22 +112,55 @@ void get_value(Entry *entry) {
 
 void get_entry() {
     Entry *entry = &entries[entry_count];
-    get_label(entry);
+
+    get_name(entry);
     skip_space();
+    entry->has_arg = false;
+
     if (src[pos] == '#') {
         entry->imm = true;
         ++pos;
-        get_value(entry);
-    } else if (src[pos] == '$' || ('0' <= src[pos] && src[pos] <= '9')) get_value(entry);
-    else entry->has_arg = false;
+        skip_space();
+    }
+
+    if (src[pos] == '$' || is_int(src[pos])) get_value(entry);
+    else if (is_char(src[pos])) {
+        byte c = 0;
+        while ((is_char(src[pos]) || is_int(src[pos])) && c < 128) entry->label[c++] = src[pos++];
+        entry->label[c] = '\0';
+        entry->has_arg = true;
+    }
+
+    if (entry->has_arg) bc += 2;
+    else ++bc;
+
     ++entry_count;
+}
+
+void get_label() {
+    Label *label = &labels[label_count];
+    byte c = 0;
+    while ((is_char(src[pos]) || is_int(src[pos])) && c < 128) label->str[c++] = src[pos++];
+    label->str[c] = '\0';
+    label->address = bc + 0x8;
+    ++label_count;
 }
 
 void to_bin(Entry entry) {
     for (byte c = 0; c < (sizeof(opcodes) / sizeof(Opcode)) && bc < 248; ++c) {
-        if (!strcmp(entry.label, opcodes[c].label)) {
+        if (!strcmp(entry.name, opcodes[c].name)) {
             Opcode opcode = opcodes[c];
             if (entry.has_arg) {
+                if (entry.label[0] != '\0') {
+                    for (byte i = 0; i < label_count; ++i) {
+                        if (!strcmp(entry.label, labels[i].str)) {
+                            if (opcode.branch) entry.arg = labels[i].address - (bc + 0x8) - 2;
+                            else entry.arg = labels[i].address;
+                            break;
+                        } 
+                    }
+                }
+
                 if (entry.imm) {
                     bin[bc++] = opcode.imm;
                     if (bc >= 248) break;
@@ -154,14 +209,26 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
     
+    nl = true;
+
     while (pos < size) {
         ch = src[pos];
-        if ('a' <= ch && ch <= 'z') get_entry();
-        else ++pos;
+        if (is_char(ch)) {
+            if (nl) get_label();
+            else get_entry();
+        } else if (ch == ';') skip_line();
+        else if (ch == '\n') {
+            nl = true;
+            ++pos;
+        } else {
+            ++pos;
+            nl = false;
+        }
     }
 
     free(src);
 
+    bc = 0;
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
     if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "wb"))) return 1;

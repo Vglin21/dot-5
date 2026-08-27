@@ -33,7 +33,6 @@ Probably one of the worst fantasy consoles ever made.
   ```
 2. Compile the emulator
   ```sh
-  cd bin
   make dot-5
   ```
 
