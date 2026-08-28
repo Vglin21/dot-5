@@ -62,7 +62,7 @@ static void __update() {
                     __resize();
                     break;
                 case SDLK_RETURN:
-                    if (event.key.mod == SDL_KMOD_LALT || event.key.mod == SDL_KMOD_RALT) {
+                    if (event.key.mod & SDL_KMOD_ALT) {
                         SDL_SetWindowFullscreen(screen, !(SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN));
                         __resize();
                     }

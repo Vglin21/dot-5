@@ -1,10 +1,10 @@
 #include <dot-5/display.h>
 #include <dot-5/cpu.h>
 
-int main(int argc, char *argv[]) {
+int wmain(int argc, wchar_t *argv[]) {
     if (argc < 2) return 1;
 
-    if (!mem_load_rom_from_file(argv[1])) return 1;
+    if (!mem_load_rom_from_file_w(argv[1])) return 1;
 
     display_turn_on("DOT-5", 640, 640, DISPLAY_TYPE_LCD);
     display_set_fps(11.97);

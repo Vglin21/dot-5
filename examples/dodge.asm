@@ -1,153 +1,190 @@
+; constants
+inpRight   = $2
+inpLeft    = $4
+inpDown    = $8
+inpUp      = $10
+playerYPos = $d0
+
+; variables
+flags    = $0
+pixel0   = $1
+pixel1   = $2
+pixel2   = $3
+pixel3   = $4
+pixel4   = $5
+rand     = $6
+turnTime = $7
+
+; code
 reset
-  lda #$D7
-  sta $1
+  lda #$d7
+  sta pixel0
   lda #$d
-  sta $2
+  sta pixel1
   lda #$58
-  sta $3
+  sta pixel2
   lda #$a3
-  sta $4
-  lda #$1
-  sta $5
+  sta pixel3
+  lda #1
+  sta pixel4
 
 start
-  lda $0
-  and #$2
+  lda flags
+  and #inpRight
   beq moveLeft
-  lda $6
-  add $2
-  sta $6
-  lda #$0
-  sta $5
-  lda $1
+  
+  lda rand
+  add pixel1
+  sta rand
+  
+  lda #0
+  sta pixel4
+  
+  lda pixel0
   inc
-  sta $1
+  sta pixel0
 
 moveLeft
-  lda $0
-  and #$4
+  lda flags
+  and #inpLeft
   beq checkPause
-  lda $6
-  add $3
-  sta $6
-  lda #$0
-  sta $5
-  lda $1
+  
+  lda rand
+  add pixel2
+  sta rand
+  
+  lda #0
+  sta pixel4
+  
+  lda pixel0
   dec
-  sta $1
+  sta pixel0
 
 checkPause
-  lda $5
-  beq moveP1
+  lda pixel4
+  beq movePixel1
   jmp reset
 
-moveP1
-  lda $2
+movePixel1
+  lda pixel1
   and #$f0
-  bne moveP2
-  lda $6
+  bne movePixel2
+
+  lda rand
   and #$f
-  sta $2
-  lda $6
+  sta pixel1
+
+  lda rand
   add #$5e
-  sta $6
+  sta rand
 
-moveP2
-  lda $3
+movePixel2
+  lda pixel2
   and #$f0
-  bne moveP3
-  lda $6
-  and #$f
-  sta $3
-  lda $6
-  add #$99
-  sta $6
+  bne movePixel3
 
-moveP3
-  lda $4
+  lda rand
+  and #$f
+  sta pixel2
+
+  lda rand
+  add #$99
+  sta rand
+
+movePixel3
+  lda pixel3
   and #$f0
   bne checkBound
-  lda $6
+
+  lda rand
   and #$f
-  sta $4
-  lda $6
+  sta pixel3
+
+  lda rand
   add #$eb
-  sta $6
+  sta rand
 
 checkBound
-  lda $1
+  lda pixel0
   and #$f0
-  sub #$d0
+  sub #playerYPos
   beq checkDir
-  lda $1
+
+  lda pixel0
   and #$f
-  add #$d0
-  sta $1
+  add #playerYPos
+  sta pixel0
 
 checkDir
-  lda $7
+  lda turnTime
   and #$f
   bne decCounter
-  lda $7
+
+  lda turnTime
   and #$80
-  bne dir0
+  bne turnRight
+
   lda #$85
-  sta $7
+  sta turnTime
   bne decCounter
-dir0
+turnRight
   lda #$5
-  sta $7
+  sta turnTime
 
 decCounter
-  lda $7
+  lda turnTime
   dec
-  sta $7
+  sta turnTime
 
-movePLeft
-  lda $7
+movePixelsLeft
+  lda turnTime
   and #$80
-  beq movePRight
-  lda $2
-  add #$f
-  sta $2
-  lda $3
-  add #$f
-  sta $3
-  lda $4
-  add #$f
-  sta $4
+  beq movePixelsRight
 
-  lda #$0
-  beq collisionP1
-movePRight
-  lda $2
-  add #$11
-  sta $2
-  lda $3
-  add #$11
-  sta $3
-  lda $4
-  add #$11
-  sta $4
+  lda pixel1
+  add #$f
+  sta pixel1
+  lda pixel2
+  add #$f
+  sta pixel2
+  lda pixel3
+  add #$f
+  sta pixel3
 
-collisionP1
-  lda $2
-  sub $1
+  lda #0
+  beq checkCollisions
+
+movePixelsRight
+  lda pixel1
+  add #$11
+  sta pixel1
+  lda pixel2
+  add #$11
+  sta pixel2
+  lda pixel3
+  add #$11
+  sta pixel3
+
+checkCollisions
+  lda pixel1
+  sub pixel0
   beq collisionTrue
-  lda $3
-  sub $1
+
+  lda pixel2
+  sub pixel0
   beq collisionTrue
-  lda $4
-  sub $1
-  bne startWait
+
+  lda pixel3
+  sub pixel0
+  bne endVBlank
 collisionTrue
-  lda #$1
-  sta $5
+  lda #1
+  sta pixel4
 
-startWait
-  lda #$0
-  sta $0
+endVBlank
+  lda #0
+  sta flags
 wait
-  lda $0
+  lda flags
   beq wait
   jmp start

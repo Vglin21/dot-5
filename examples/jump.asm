@@ -1,127 +1,185 @@
+; input constants
+inpRight = $2
+inpLeft  = $4
+inpDown  = $8
+inpUp    = $10
+
+; variables
+flags    = $0
+pixel0   = $1
+pixel1   = $2
+pixel2   = $3
+pixel3   = $4
+pixel4   = $5
+rand     = $6
+jumpTime = $7
+
+; code
+reset
   lda #$1
-  sta $3
-  
-  lda $3
-  bne $e
-  lda $4
+  sta pixel2
+
+start
+  lda pixel2
+  and #$1
+  bne isPause
+
+  lda pixel3
   dec
-  sta $4
-  lda $5
+  sta pixel3
+  lda pixel4
   dec
-  sta $5
-  lda #$0
-  beq $7
+  sta pixel4
+
+  lda #0
+  beq incRand
+isPause
   dec
-  sta $4
+  sta pixel3
   lda #$8
-  sta $5
-  
-  lda $6
+  sta pixel4
+
+incRand
+  lda rand
   add #$d6
-  sta $6
-  
-  lda $7
-  beq $3
+  sta rand
+
+decJump
+  lda jumpTime
+  beq inputJump
   dec
-  sta $7
+  sta jumpTime
+
+inputJump
+  lda flags
+  and #inpUp
+  beq notJumping
+
+  lda rand
+  add pixel3
+  sta rand
+
+  lda pixel2
+  and #$2
+  sta pixel2
+  bne inputCrouch
   
-  lda $0
-  and #$10
-  beq $12
-  lda #$0
-  sta $3
-  lda $6
-  add $4
-  sta $6
-  lda $7
-  bne $4
+  lda jumpTime
+  bne inputCrouch
+
   lda #$4
-  sta $7
-  
-  lda $0
-  and #$8
-  beq $16
-  lda #$0
-  sta $3
-  lda $6
-  add $4
-  sta $6
-  lda $7
-  bne $6
+  sta jumpTime
+  lda #$2
+  sta pixel2
+  bne inputCrouch
+notJumping
+  lda pixel2
+  and #$1
+  sta pixel2
+
+inputCrouch
+  lda flags
+  and #inpDown
+  beq stand
+
+  lda pixel2
+  and #$2
+  sta pixel2
+
+  lda rand
+  add pixel3
+  sta rand
+
+  lda jumpTime
+  bne checkJumpTime
+
   lda #$d2
-  sta $1
-  sta $2
-  bne $8
+  sta pixel0
+  sta pixel1
+  bne checkJumpTime
+stand
   lda #$c2
-  sta $1
+  sta pixel0
   add #$10
-  sta $2
-  
-  lda $7
-  beq $a
+  sta pixel1
+
+checkJumpTime
+  lda jumpTime
+  beq isCrouching
+
   lda #$b2
-  sta $1
+  sta pixel0
   add #$10
-  sta $2
-  bne $e
+  sta pixel1
+  bne movePixel3
+isCrouching
   lda $1
   sub #$d2
-  beq $8
+  beq movePixel3
+
   lda #$c2
-  sta $1
+  sta pixel0
   add #$10
-  sta $2
-  
-  lda $4
+  sta pixel1
+
+movePixel3
+  lda pixel3
   and #$f
-  bne $10
-  lda $6
+  bne movePixel4
+
+  lda rand
   and #$1
-  bne $6
-  lda #$cf
-  sta $4
-  bne $4
-  lda #$df
-  sta $4
+  bne lowPixel3
   
-  lda $5
+  lda #$cf
+  sta pixel3
+  bne movePixel4
+lowPixel3
+  lda #$df
+  sta pixel3
+
+movePixel4
+  lda pixel4
   and #$f
-  bne $10
-  lda $6
+  bne checkCollisions
+
+  lda rand
   and #$1
-  bne $6
+  bne lowPixel4
+
   lda #$cf
-  sta $5
-  bne $4
+  sta pixel4
+  bne checkCollisions
+lowPixel4
   lda #$df
-  sta $5
+  sta pixel4
+
+checkCollisions
+  lda pixel3
+  sub pixel0
+  beq collisionTrue
   
-  lda $4
-  sub $1
-  bne $4
-  lda #$1
-  sta $3
+  lda pixel3
+  sub pixel1
+  beq collisionTrue
   
-  lda $4
-  sub $2
-  bne $4
-  lda #$1
-  sta $3
+  lda pixel4
+  sub pixel0
+  beq collisionTrue
   
-  lda $5
-  sub $1
-  bne $4
-  lda #$1
-  sta $3
+  lda pixel4
+  sub pixel1
+  bne endVBlank
+collisionTrue
+  lda pixel2
+  and #$2
+  inc
+  sta pixel2
   
-  lda $5
-  sub $2
-  bne $4
-  lda #$1
-  sta $3
-  
-  lda #$0
-  sta $0
-  lda $0
-  beq $fc
-  jmp $c
+endVBlank
+  lda #0
+  sta flags
+wait
+  lda flags
+  beq wait
+  jmp start

@@ -142,7 +142,21 @@ void get_label() {
     byte c = 0;
     while ((is_char(src[pos]) || is_int(src[pos])) && c < 128) label->str[c++] = src[pos++];
     label->str[c] = '\0';
-    label->address = bc + 0x8;
+
+    skip_space();
+
+    if (src[pos] != '\n') {
+        if (src[pos] == '=') {
+            ++pos;
+            skip_space();
+        }
+
+        if (src[pos] == '$') {
+            ++pos;
+            label->address = get_hex();
+        } else if (is_int(src[pos])) label->address = get_int();
+    } else label->address = bc + 0x8;
+
     ++label_count;
 }
 
@@ -176,13 +190,13 @@ void to_bin(Entry entry) {
     }
 }
 
-int main(int argc, char *argv[]) {
+int wmain(int argc, wchar_t *argv[]) {
     if (argc < 2) {
         printf("d5asm.exe: error: no input file\n");
         return 1;
     }
 
-    if (!strcmp(argv[1], "--h") || !strcmp(argv[1], "--help")) {
+    if (!wcscmp(argv[1], L"--h") || !wcscmp(argv[1], L"--help")) {
         printf(
             "Usage: d5asm.exe [source-file] [output-file-name](optional)\n"
         );
@@ -190,8 +204,8 @@ int main(int argc, char *argv[]) {
     }
     
     FILE *file;
-    if (!(file = fopen(argv[1], "r"))) {
-        printf("d5asm.exe: error: %s: no such file or directory\n", argv[1]);
+    if (!(file = _wfopen(argv[1], L"r"))) {
+        printf("d5asm.exe: error: %hs: no such file or directory\n", argv[1]);
         return 1;
     }
 
@@ -231,7 +245,7 @@ int main(int argc, char *argv[]) {
     bc = 0;
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
-    if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "wb"))) return 1;
+    if (!(file = _wfopen(argc < 3 ? L"output.d5" : argv[2], L"wb"))) return 1;
     
     fwrite(bin, 1, 248, file);
     printf("d5asm.exe: %d bytes written\n", bc);
