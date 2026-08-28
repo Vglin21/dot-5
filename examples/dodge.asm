@@ -39,6 +39,11 @@ start
   
   lda #0
   sta pixel4
+
+  lda pixel0
+  and #$f
+  sub #$f
+  beq moveLeft
   
   lda pixel0
   inc
@@ -55,6 +60,10 @@ moveLeft
   
   lda #0
   sta pixel4
+
+  lda pixel0
+  and #$f
+  beq checkPause
   
   lda pixel0
   dec
@@ -94,7 +103,7 @@ movePixel2
 movePixel3
   lda pixel3
   and #$f0
-  bne checkBound
+  bne checkDir
 
   lda rand
   and #$f
@@ -103,17 +112,6 @@ movePixel3
   lda rand
   add #$eb
   sta rand
-
-checkBound
-  lda pixel0
-  and #$f0
-  sub #playerYPos
-  beq checkDir
-
-  lda pixel0
-  and #$f
-  add #playerYPos
-  sta pixel0
 
 checkDir
   lda turnTime
