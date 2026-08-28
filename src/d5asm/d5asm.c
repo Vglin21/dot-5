@@ -16,15 +16,15 @@ typedef struct {
     byte arg;
     bool has_arg;
     bool imm;
-    char label[129];
+    char label[65];
 } Entry;
 
 typedef struct {
-    char str[129];
+    char str[65];
     byte address;
 } Label;
 
-Opcode opcodes[] = {
+const Opcode opcodes[] = {
     {"inc", INC, 0,     0,     false},
     {"dec", DEC, 0,     0,     false},
     {"lda", 0,   LDA_I, LDA_Z, false},
@@ -126,7 +126,7 @@ void get_entry() {
     if (src[pos] == '$' || is_int(src[pos])) get_value(entry);
     else if (is_char(src[pos])) {
         byte c = 0;
-        while ((is_char(src[pos]) || is_int(src[pos])) && c < 128) entry->label[c++] = src[pos++];
+        while ((is_char(src[pos]) || is_int(src[pos])) && c < 64) entry->label[c++] = src[pos++];
         entry->label[c] = '\0';
         entry->has_arg = true;
     }
@@ -140,7 +140,7 @@ void get_entry() {
 void get_label() {
     Label *label = &labels[label_count];
     byte c = 0;
-    while ((is_char(src[pos]) || is_int(src[pos])) && c < 128) label->str[c++] = src[pos++];
+    while ((is_char(src[pos]) || is_int(src[pos])) && c < 64) label->str[c++] = src[pos++];
     label->str[c] = '\0';
 
     skip_space();

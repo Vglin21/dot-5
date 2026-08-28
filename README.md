@@ -26,47 +26,26 @@ Probably one of the worst fantasy consoles ever made.
 - MinGW C Compiler for Windows (Hope i'll make Linux version soon)
 - GnuWin32 Make Tool
 
-### Installation
-1. Clone the repo
-  ```sh
-  git clone https://github.com/Vglin21/dot-5
-  ```
-2. Compile the emulator
-  ```sh
-  make dot-5
-  ```
+### Building from Source
+```sh
+# Clone the repository
+git clone https://github.com/Vglin21/dot-5
 
-### Toolchain & Assembler Usage
+# Compile both emulator and assembler
+make dot-5
+make d5asm
+```
 
-The repository includes `d5asm` assembler designed for DOT-5 architecture.
+### Assembling and Running the Program
+- The repository includes example assembly code for `d5asm` and already compiled `.d5` binary files for `dot-5` in `examples/`.
 
-1. Compile the Assembler
-  ```sh
-  make d5asm
-  ```
+```sh
+# Assemble example source code
+./bin/d5asm examples/pong.asm examples/pong.d5
 
-2. Run the Help Command
-  ```sh
-  ./d5asm --help
-  ```
-  It will display the following message:
-  ```sh
-  Usage: d5asm.exe [source-file] [output-file-name](optional)
-  ```
-
----
-
-The repository also includes example assembly code for `d5asm` and already compiled `.d5` binary files for `dot-5` in `bin/examples`.
-
-- Assemble the Code
-  ```sh
-  ./d5asm examples/pong.asm examples/pong.d5
-  ```
-
-- Run DOT-5
-  ```sh
-  ./dot-5 examples/pong.d5
-  ```
+# Launch the binary in the emulator
+./bin/dot-5 examples/pong.d5
+```
 
 ## Architecture & Memory Map
 
@@ -79,7 +58,7 @@ The repository also includes example assembly code for `d5asm` and already compi
 
 | Address       | Description                                                                  |
 | :-----------: | ---------------------------------------------------------------------------- |
-| `$00 bit 0`   | Set to `1` when console enters vblank state, has to be reset manually        |
+| `$00 bit 0`   | Set to `1` when console enters vblank state, must be cleared manually        |
 | `$00 bit 1`   | `1` if `right` button is pressed, otherwise `0`                              |
 | `$00 bit 2`   | `1` if `left` button is pressed, otherwise `0`                               |
 | `$00 bit 3`   | `1` if `down` button is pressed, otherwise `0`                               |
@@ -89,13 +68,15 @@ The repository also includes example assembly code for `d5asm` and already compi
 
 ## CPU Specifications
 
+### Registers
+
+- **8-bit Accumulator Register**
 - **8-bit Program Counter (PC)**
 - **Zero Flag**
-- **8-bit Accumulator Register**
   
 ### Instruction Set Architecture (ISA)
 
-DOT-5 CPU uses only a nibble (first 4 bits of a byte) for it's instructions, so it only has 16 instructions total.  
+- DOT-5 CPU uses only a nibble (first 4 bits of a byte) for it's instructions, so it only has 16 instructions total.  
 
 | Instruction       | Full Name           | Bytecode | Function                                                                    | Zero Flag Updates? |
 | :---------------: | :-----------------: | :------: | --------------------------------------------------------------------------- | :----------------: |
