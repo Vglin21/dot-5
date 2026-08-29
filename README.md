@@ -23,17 +23,18 @@ Probably one of the worst fantasy consoles ever made.
 ## Getting Started
 
 ### Prerequisites
-- MinGW C Compiler for Windows (Hope i'll make Linux version soon)
-- GnuWin32 Make Tool
+- A C compiler toolchain (MinGW-w64 + mingw32-make, MSVC etc.)
+- CMake (3.16+)
+- SDL3
 
 ### Building from Source
 ```sh
 # Clone the repository
 git clone https://github.com/Vglin21/dot-5
 
-# Compile both emulator and assembler
-make dot-5
-make d5asm
+# Configure and compile both emulator and assembler
+cmake -B build
+cmake --build build
 ```
 
 ### Assembling and Running the Program
