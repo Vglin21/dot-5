@@ -56,11 +56,6 @@ static void __update() {
         case SDL_EVENT_QUIT: should_close = true; break;
         case SDL_EVENT_KEY_DOWN:
             switch (event.key.key) {
-                case SDLK_ESCAPE: should_close = true; break;
-                case SDLK_F11:
-                    SDL_SetWindowFullscreen(screen, !(SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN));
-                    __resize();
-                    break;
                 case SDLK_RETURN:
                     if (event.key.mod & SDL_KMOD_ALT) {
                         SDL_SetWindowFullscreen(screen, !(SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN));
@@ -110,6 +105,7 @@ void display_close() { should_close = true; }
 bool display_should_close() { return should_close; }
 bool display_is_key_pressed(DisplayKey key) { return keyboard ? keyboard[key] : false; }
 bool display_is_frame_active() { return accumulator >= target_time_step; }
+bool display_is_fullscreen() { return SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN; }
 
 bool display_set_signal_size(word width, word height, word hblank, word vblank) {
     if (screen) {
@@ -164,6 +160,10 @@ void display_set_aspect_ratio(double ar) {
     __resize();
 }
 void display_set_window_size(dword width, dword height) { SDL_SetWindowSize(screen, width, height); }
+void display_set_fullscreen(bool fullscreen) {
+    SDL_SetWindowFullscreen(screen, fullscreen);
+    __resize();
+}
 
 void display_draw_pixel(dword color) {
     if (signal) {

@@ -1,19 +1,175 @@
-#include <dot-5/display.h>
-#include <dot-5/cpu.h>
+#include <dot-5/dot-5.h>
+#include <stdlib.h>
+#include <string.h>
 
-int wmain(int argc, wchar_t *argv[]) {
-    if (argc < 2) return 1;
+static char *_value = NULL;
+#define get_value(name, t, f) ((_value = cfg_get_value(name)) ? t(_value) : f) 
 
-    if (!mem_load_rom_from_file_w(argv[1])) return 1;
+typedef struct {
+    char *name;
+    dword key;
+} Key;
 
-    display_turn_on("DOT-5", 640, 640, DISPLAY_TYPE_LCD);
-    display_set_fps(11.97);
+struct {
+    struct {
+        bool fullscreen;
+        dword width;
+        dword height;
+    } display;
+
+    float emulation_speed;
+
+    struct {
+        dword background;
+        dword pixel;
+    } rendering;
+
+    struct {
+        dword up;
+        dword left;
+        dword down;
+        dword right;
+        dword exit;
+        dword fullscreen;
+    } input;
+} config;
+
+static Key keys[] = {
+    {"KEY_A", DISPK_A},
+    {"KEY_B", DISPK_B},
+    {"KEY_C", DISPK_C},
+    {"KEY_D", DISPK_D},
+    {"KEY_E", DISPK_E},
+    {"KEY_F", DISPK_F},
+    {"KEY_G", DISPK_G},
+    {"KEY_H", DISPK_H},
+    {"KEY_I", DISPK_I},
+    {"KEY_J", DISPK_J},
+    {"KEY_K", DISPK_K},
+    {"KEY_L", DISPK_L},
+    {"KEY_M", DISPK_M},
+    {"KEY_N", DISPK_N},
+    {"KEY_O", DISPK_O},
+    {"KEY_P", DISPK_P},
+    {"KEY_Q", DISPK_Q},
+    {"KEY_R", DISPK_R},
+    {"KEY_S", DISPK_S},
+    {"KEY_T", DISPK_T},
+    {"KEY_U", DISPK_U},
+    {"KEY_V", DISPK_V},
+    {"KEY_W", DISPK_W},
+    {"KEY_X", DISPK_X},
+    {"KEY_Y", DISPK_Y},
+    {"KEY_Z", DISPK_Z},
+
+    {"KEY_RETURN", DISPK_RETURN},
+    {"KEY_ESCAPE", DISPK_ESCAPE},
+    {"KEY_TAB", DISPK_TAB},
+    {"KEY_SPACE", DISPK_SPACE},
+
+    {"KEY_RIGHT", DISPK_RIGHT},
+    {"KEY_LEFT", DISPK_LEFT},
+    {"KEY_DOWN", DISPK_DOWN},
+    {"KEY_UP", DISPK_UP},
+
+    {"KEY_LCTRL", DISPK_LCTRL},
+    {"KEY_LSHIFT", DISPK_LSHIFT},
+    {"KEY_LALT", DISPK_LALT},
+    {"KEY_RCTRL", DISPK_RCTRL},
+    {"KEY_RSHIFT", DISPK_RSHIFT},
+    {"KEY_RALT", DISPK_RALT}
+};
+
+static dword get_key(char *name) {
+    for (size_t i = 0; i < sizeof(keys) / sizeof(Key); ++i) {
+        if (!strcmp(keys[i].name, name)) return keys[i].key;
+    }
+    return 0;
+}
+
+static bool is_hex(char hex) {
+    return ('0' <= hex && hex <= '9') || ('a' <= hex && hex <= 'f') || ('A' <= hex && hex <= 'F');
+}
+
+static qword hex_to_int(char *hex) {
+    if (!hex) return 0;
+
+    int8_t pos = strlen(hex);
+    byte shift = 0;
+    qword value = 0;
+
+    while ((--pos) >= 0) {
+        char hc = hex[pos];
+        if ('0' <= hc && hc <= '9') value += (hc - '0') << shift;
+        else if ('a' <= hc && hc <= 'f') value += (hc - 'a' + 0xa) << shift;
+        else if ('A' <= hc && hc <= 'F') value += (hc - 'A' + 0xa) << shift;
+        else return 0;
+
+        shift += 4;
+    }
+
+    return value;
+}
+static dword hex_to_color(char *hex) { return (hex_to_int(hex) << 8) + 0xff; }
+
+static void configure() {
+    config.display.fullscreen = !strcmp(cfg_get_value("fullscreen"), "true");
+    config.display.width      = get_value("window_width", atoi, 480);
+    config.display.height     = get_value("window_height", atoi, 480);
+
+    config.emulation_speed = get_value("emulation_speed", atof, 1.0);
+
+    config.rendering.background = get_value("background_color", hex_to_color, 0xe7e7e7ff);
+    config.rendering.pixel      = get_value("pixel_color", hex_to_color, 0x070707ff);
+
+    config.input.up         = get_value("input_up", get_key, DISPK_UP);
+    config.input.left       = get_value("input_left", get_key, DISPK_LEFT);
+    config.input.down       = get_value("input_down", get_key, DISPK_DOWN);
+    config.input.right      = get_value("input_right", get_key, DISPK_RIGHT);
+    config.input.exit       = get_value("close_window", get_key, DISPK_ESCAPE);
+    config.input.fullscreen = get_value("toggle_fullscreen", get_key, DISPK_F);
+}
+
+bool d5_load(const char *bin_filepath, const char *config_filepath) {
+    if (bin_filepath) {
+        if (!mem_load_rom_from_file(bin_filepath)) return false;
+    } else return false;
+    
+    cfg_load(config_filepath);
+    configure();
+
+    return true;
+}
+bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
+    if (bin_filepath) {
+        if (!mem_load_rom_from_file_w(bin_filepath)) return false;
+    } else return false;
+    
+    cfg_load_w(config_filepath);
+    configure();
+
+    return true;
+}
+
+void d5_run() {
+    display_turn_on("DOT-5", config.display.width, config.display.height, DISPLAY_TYPE_LCD);
+    display_set_fullscreen(config.display.fullscreen);
+
+    display_set_fps(11.97 * config.emulation_speed);
 
     display_set_signal_size(16, 16, 0, 0);
 
+    bool fullscreen = false;
     word beam = 0;
     while (!display_should_close()) {
         while (display_is_frame_active()) {
+            if (display_is_key_pressed(config.input.exit)) display_close();
+
+            if (display_is_key_pressed(config.input.fullscreen)) {
+                if (!fullscreen) display_set_fullscreen(!display_is_fullscreen());
+                fullscreen = true;
+            } else fullscreen = false;
+
             byte cycles = cpu_step();
 
             while (cycles--) {
@@ -23,27 +179,15 @@ int wmain(int argc, wchar_t *argv[]) {
                         dot = true;
                         break;
                     }
-                    display_draw_pixel(dot ? 0x070707ff : 0xe7e7e7ff);
+                    display_draw_pixel(dot ? config.rendering.pixel : config.rendering.background);
 
                     ++beam;
                 } else if (beam == 256) {
                     mem_write(0, 1);
-                    if (
-                        display_is_key_pressed(DISPK_RIGHT) ||
-                        display_is_key_pressed(DISPK_D)
-                    ) mem_write(0, mem_read(0) | 2);
-                    if (
-                        display_is_key_pressed(DISPK_LEFT) ||
-                        display_is_key_pressed(DISPK_A)
-                    ) mem_write(0, mem_read(0) | 4);
-                    if (
-                        display_is_key_pressed(DISPK_DOWN) ||
-                        display_is_key_pressed(DISPK_S)
-                    ) mem_write(0, mem_read(0) | 8);
-                    if (
-                        display_is_key_pressed(DISPK_UP) ||
-                        display_is_key_pressed(DISPK_W)
-                    ) mem_write(0, mem_read(0) | 16);
+                    if (display_is_key_pressed(config.input.right)) mem_write(0, mem_read(0) | 2);
+                    if (display_is_key_pressed(config.input.left))  mem_write(0, mem_read(0) | 4);
+                    if (display_is_key_pressed(config.input.down))  mem_write(0, mem_read(0) | 8);
+                    if (display_is_key_pressed(config.input.up))    mem_write(0, mem_read(0) | 16);
 
                     ++beam;
                 } else if ((++beam) == 320) beam = 0;
@@ -52,8 +196,5 @@ int wmain(int argc, wchar_t *argv[]) {
 
         display_update();
     }
-
-    display_turn_off();
-
-    return 0;
 }
+void d5_exit() { display_turn_off(); }

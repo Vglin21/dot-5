@@ -49,6 +49,7 @@ typedef enum {
 
     DISPK_RETURN = 40,
     DISPK_ESCAPE,
+    DISPK_TAB = 43,
     DISPK_SPACE = 44,
     
     DISPK_RIGHT = 79,
@@ -71,11 +72,13 @@ extern void display_close();
 extern bool display_should_close();
 extern bool display_is_key_pressed(DisplayKey key);
 extern bool display_is_frame_active();
+extern bool display_is_fullscreen();
 
 extern bool display_set_signal_size(word width, word height, word hblank, word vblank);
 extern void display_set_fps(double fps);
 extern void display_set_aspect_ratio(double aspect_ratio);
 extern void display_set_window_size(dword width, dword height);
+extern void display_set_fullscreen(bool fullscreen);
 
 extern void display_draw_pixel(dword color);
 extern void display_draw_pixels(dword color, size_t count);

@@ -3,7 +3,6 @@ inpRight   = $2
 inpLeft    = $4
 inpDown    = $8
 inpUp      = $10
-playerYPos = $d0
 
 ; variables
 flags    = $0
