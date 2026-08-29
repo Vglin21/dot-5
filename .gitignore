@@ -3,3 +3,4 @@
 .vscode/
 build/
 SDL3/
+bin/

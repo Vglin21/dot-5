@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char *_value = NULL;
-#define get_value(name, t, f) ((_value = cfg_get_value(name)) ? t(_value) : f) 
-
 typedef struct {
     char *name;
     dword key;
@@ -110,24 +107,25 @@ static qword hex_to_int(char *hex) {
 
     return value;
 }
-static dword hex_to_color(char *hex) { return (hex_to_int(hex) << 8) + 0xff; }
 
 static void configure() {
-    config.display.fullscreen = !strcmp(cfg_get_value("fullscreen"), "true");
-    config.display.width      = get_value("window_width", atoi, 480);
-    config.display.height     = get_value("window_height", atoi, 480);
+    char *v;
+    config.display.fullscreen = (v = cfg_get_value("fullscreen")) ? !strcmp(v, "true") : false;
+    config.display.width      = (v = cfg_get_value("window_width")) ? atoi(v) : 480;
+    config.display.height     = (v = cfg_get_value("window_height")) ? atoi(v) : 480;
 
-    config.emulation_speed = get_value("emulation_speed", atof, 1.0);
+    config.emulation_speed = (v = cfg_get_value("emulation_speed")) ? atof(v) : 1.0;
 
-    config.rendering.background = get_value("background_color", hex_to_color, 0xe7e7e7ff);
-    config.rendering.pixel      = get_value("pixel_color", hex_to_color, 0x070707ff);
+    config.rendering.background = (v = cfg_get_value("background_color")) ? (hex_to_int(v) << 8) + 0xff : 0xe7e7e7ff;
+    config.rendering.pixel      = (v = cfg_get_value("pixel_color")) ? (hex_to_int(v) << 8) + 0xff : 0x070707ff;
 
-    config.input.up         = get_value("input_up", get_key, DISPK_UP);
-    config.input.left       = get_value("input_left", get_key, DISPK_LEFT);
-    config.input.down       = get_value("input_down", get_key, DISPK_DOWN);
-    config.input.right      = get_value("input_right", get_key, DISPK_RIGHT);
-    config.input.exit       = get_value("close_window", get_key, DISPK_ESCAPE);
-    config.input.fullscreen = get_value("toggle_fullscreen", get_key, DISPK_F);
+    config.input.up         = (v = cfg_get_value("input_up")) ? get_key(v) : DISPK_UP;
+    config.input.left       = (v = cfg_get_value("input_left")) ? get_key(v) : DISPK_LEFT;
+    config.input.down       = (v = cfg_get_value("input_down")) ? get_key(v) : DISPK_DOWN;
+    config.input.right      = (v = cfg_get_value("input_right")) ? get_key(v) : DISPK_RIGHT;
+    config.input.exit       = (v = cfg_get_value("close_window")) ? get_key(v) : DISPK_ESCAPE;
+    config.input.fullscreen = (v = cfg_get_value("toggle_fullscreen")) ? get_key(v) : DISPK_F;
+
 }
 
 bool d5_load(const char *bin_filepath, const char *config_filepath) {
@@ -137,7 +135,7 @@ bool d5_load(const char *bin_filepath, const char *config_filepath) {
     
     cfg_load(config_filepath);
     configure();
-
+    
     return true;
 }
 bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
