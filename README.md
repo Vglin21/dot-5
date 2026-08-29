@@ -11,14 +11,14 @@ Probably one of the worst fantasy consoles ever made.
 
 ## Controls
 
-| Key                   | Function                 |
-| :-------------------: | ------------------------ |
-| `W`/`Up`              | Up button is pressed     |
-| `A`/`Left`            | Left button is pressed   |
-| `S`/`Down`            | Down button is pressed   |
-| `D`/`Right`           | Right button is pressed  |
-| `Escape`              | Closes the emulator      |
-| `Alt` + `Enter`/`F11` | Switches fullscreen mode |
+| Key                 | Function                |
+| :-----------------: | ----------------------- |
+| `Up`                | Up button is pressed    |
+| `Left`              | Left button is pressed  |
+| `Down`              | Down button is pressed  |
+| `Right`             | Right button is pressed |
+| `Escape`            | Closes the emulator     |
+| `Alt` + `Enter`/`F` | Toggles fullscreen mode |
 
 ## Getting Started
 
@@ -37,7 +37,7 @@ make d5asm
 ```
 
 ### Assembling and Running the Program
-- The repository includes example assembly code for `d5asm` and already compiled `.d5` binary files for `dot-5` in `examples/`.
+- **NOTE:** The repository includes example assembly code for `d5asm` and already compiled `.d5` binary files for `dot-5` in `examples/`.
 
 ```sh
 # Assemble example source code
@@ -76,7 +76,7 @@ make d5asm
   
 ### Instruction Set Architecture (ISA)
 
-- DOT-5 CPU uses only a nibble (first 4 bits of a byte) for it's instructions, so it only has 16 instructions total.  
+- **NOTE:** DOT-5 CPU uses only a nibble (first 4 bits of a byte) for it's instructions, so it only has 16 instructions total.  
 
 | Instruction       | Full Name           | Bytecode | Function                                                                    | Zero Flag Updates? |
 | :---------------: | :-----------------: | :------: | --------------------------------------------------------------------------- | :----------------: |
