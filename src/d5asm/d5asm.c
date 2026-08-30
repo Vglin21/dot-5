@@ -190,13 +190,21 @@ void to_bin(Entry entry) {
     }
 }
 
+#ifdef _WIN32
 int wmain(int argc, wchar_t *argv[]) {
+#else
+int main(int argc, char *argv[]) {
+#endif
     if (argc < 2) {
         printf("d5asm.exe: error: no input file\n");
         return 1;
     }
 
+#ifdef _WIN32
     if (!wcscmp(argv[1], L"--h") || !wcscmp(argv[1], L"--help")) {
+#else
+    if (!strcmp(argv[1], "--h") || !strcmp(argv[1], "--help")) {
+#endif
         printf(
             "Usage: d5asm.exe [source-file] [output-file-name](optional)\n"
         );
@@ -204,8 +212,13 @@ int wmain(int argc, wchar_t *argv[]) {
     }
     
     FILE *file;
+#ifdef _WIN32
     if (!(file = _wfopen(argv[1], L"r"))) {
-        printf("d5asm.exe: error: %hs: no such file or directory\n", argv[1]);
+        printf("d5asm.exe: error: %ls: no such file or directory\n", argv[1]);
+#else
+    if (!(file = fopen(argv[1], "r"))) {
+        printf("d5asm.exe: error: %s: no such file or directory\n", argv[1]);
+#endif
         return 1;
     }
 
@@ -245,7 +258,11 @@ int wmain(int argc, wchar_t *argv[]) {
     bc = 0;
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
+#ifdef _WIN32
     if (!(file = _wfopen(argc < 3 ? L"output.d5" : argv[2], L"wb"))) return 1;
+#else
+    if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "wb"))) return 1;
+#endif
     
     fwrite(bin, 1, 248, file);
     printf("d5asm.exe: %d bytes written\n", bc);

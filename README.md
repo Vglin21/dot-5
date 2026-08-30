@@ -26,8 +26,9 @@ Probably one of the worst fantasy consoles ever made.
 - A C compiler toolchain (MinGW-w64 + mingw32-make, MSVC etc.)
 - CMake (3.16+)
 - SDL3
+- Emscripten SDK (for web version)
 
-### Building from Source
+### Building for Windows
 ```sh
 # Clone the repository
 git clone https://github.com/Vglin21/dot-5
@@ -37,7 +38,17 @@ cmake -B build
 cmake --build build
 ```
 
-### Assembling and Running the Program
+### Building for Web
+```sh
+# Clone the repository
+git clone https://github.com/Vglin21/dot-5
+
+# Configure and compile
+emcmake cmake -B build-web
+cmake --build build-web
+```
+
+### Assembling and Running a Program
 - **NOTE:** The repository includes example assembly code for `d5asm` and already compiled `.d5` binary files for `dot-5` in `examples/`.
 
 ```sh

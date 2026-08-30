@@ -1,6 +1,11 @@
 #include <dot-5/dot-5.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 typedef struct {
     char *name;
@@ -77,6 +82,9 @@ static Key keys[] = {
     {"KEY_RALT", DISPK_RALT}
 };
 
+static bool fullscreen = false;
+static word beam = 0;
+
 static dword get_key(char *name) {
     for (size_t i = 0; i < sizeof(keys) / sizeof(Key); ++i) {
         if (!strcmp(keys[i].name, name)) return keys[i].key;
@@ -128,6 +136,48 @@ static void configure() {
 
 }
 
+static void d5_frame() {
+    while (display_is_frame_active()) {
+#ifndef __EMSCRIPTEN__
+        if (display_is_key_pressed(config.input.exit)) display_close();
+#endif
+
+        if (display_is_key_pressed(config.input.fullscreen)) {
+            if (!fullscreen) display_set_fullscreen(!display_is_fullscreen());
+            fullscreen = true;
+        } else fullscreen = false;
+
+        byte cycles = cpu_step();
+
+        while (cycles--) {
+            if (beam < 256) {
+                bool dot = false;
+                for (byte c = 1; c < 6; ++c) if (beam == mem_read(c)) {
+                    dot = true;
+                    break;
+                }
+                display_draw_pixel(dot ? config.rendering.pixel : config.rendering.background);
+
+                ++beam;
+            } else if (beam == 256) {
+                mem_write(0, 1);
+                if (display_is_key_pressed(config.input.right)) mem_write(0, mem_read(0) | 2);
+                if (display_is_key_pressed(config.input.left))  mem_write(0, mem_read(0) | 4);
+                if (display_is_key_pressed(config.input.down))  mem_write(0, mem_read(0) | 8);
+                if (display_is_key_pressed(config.input.up))    mem_write(0, mem_read(0) | 16);
+
+                ++beam;
+            } else if ((++beam) == 320) beam = 0;
+        }
+    }
+
+    display_update();
+
+#ifdef __EMSCRIPTEN__
+    if (display_should_close()) emscripten_cancel_main_loop();
+#endif
+}
+
 bool d5_load(const char *bin_filepath, const char *config_filepath) {
     if (bin_filepath) {
         if (!mem_load_rom_from_file(bin_filepath)) return false;
@@ -138,6 +188,7 @@ bool d5_load(const char *bin_filepath, const char *config_filepath) {
     
     return true;
 }
+#ifdef _WIN32
 bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
     if (bin_filepath) {
         if (!mem_load_rom_from_file_w(bin_filepath)) return false;
@@ -148,51 +199,24 @@ bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
 
     return true;
 }
+#endif
 
 void d5_run() {
     display_turn_on("DOT-5", config.display.width, config.display.height, DISPLAY_TYPE_LCD);
     display_set_fullscreen(config.display.fullscreen);
-
+    
     display_set_fps(11.97 * config.emulation_speed);
-
+    
     display_set_signal_size(16, 16, 0, 0);
+    
+    fullscreen = false;
+    beam = 0;
+    
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(d5_frame, 0, 1);
+#else
+    while (!display_should_close()) d5_frame();
+#endif
 
-    bool fullscreen = false;
-    word beam = 0;
-    while (!display_should_close()) {
-        while (display_is_frame_active()) {
-            if (display_is_key_pressed(config.input.exit)) display_close();
-
-            if (display_is_key_pressed(config.input.fullscreen)) {
-                if (!fullscreen) display_set_fullscreen(!display_is_fullscreen());
-                fullscreen = true;
-            } else fullscreen = false;
-
-            byte cycles = cpu_step();
-
-            while (cycles--) {
-                if (beam < 256) {
-                    bool dot = false;
-                    for (byte c = 1; c < 6; ++c) if (beam == mem_read(c)) {
-                        dot = true;
-                        break;
-                    }
-                    display_draw_pixel(dot ? config.rendering.pixel : config.rendering.background);
-
-                    ++beam;
-                } else if (beam == 256) {
-                    mem_write(0, 1);
-                    if (display_is_key_pressed(config.input.right)) mem_write(0, mem_read(0) | 2);
-                    if (display_is_key_pressed(config.input.left))  mem_write(0, mem_read(0) | 4);
-                    if (display_is_key_pressed(config.input.down))  mem_write(0, mem_read(0) | 8);
-                    if (display_is_key_pressed(config.input.up))    mem_write(0, mem_read(0) | 16);
-
-                    ++beam;
-                } else if ((++beam) == 320) beam = 0;
-            }
-        }
-
-        display_update();
-    }
+    display_turn_off();
 }
-void d5_exit() { display_turn_off(); }

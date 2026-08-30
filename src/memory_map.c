@@ -23,6 +23,7 @@ byte mem_load_rom_from_file(const char *filename) {
 
     return size;
 }
+#ifdef _WIN32
 byte mem_load_rom_from_file_w(const wchar_t *filename) {
     FILE *file;
     if (!(file = _wfopen(filename, L"rb"))) return 0;
@@ -38,6 +39,7 @@ byte mem_load_rom_from_file_w(const wchar_t *filename) {
 
     return size;
 }
+#endif
 
 byte mem_read(byte address) { return memory[address]; }
 void mem_write(byte address, byte value) { if (address < 8) memory[address] = value; }

@@ -24,7 +24,7 @@ bool is_num(char num) {
 }
 
 void skip_space() { while (pos < size && src[pos] == ' ') ++pos; }
-void skip_line() { while (pos < size && src[pos] != '\n') ++pos; }
+void skip_line() { while (pos < size && src[pos] != '\n' && src[pos] != '\r') ++pos; }
 
 bool read_value() {
     Value *value = &values[value_count];
@@ -37,9 +37,9 @@ bool read_value() {
     ++pos;
     skip_space();
 
-    if (src[pos] == '\n') return false;
+    if (src[pos] == '\n' || src[pos] != '\r') return false;
     
-    for (int i = 0; pos < size && src[pos] != ' ' && src[pos] != '\n' && i < 64; ++i)
+    for (int i = 0; pos < size && src[pos] != ' ' && src[pos] != '\n' && src[pos] != '\r' && i < 64; ++i)
         value->value[i] = src[pos++];
     ++value_count;
 
@@ -83,7 +83,7 @@ bool cfg_load(const char *filename) {
 
     return result;
 }
-
+#ifdef _WIN32
 bool cfg_load_w(const wchar_t *filename) {
     if (!filename) return false;
 
@@ -109,6 +109,7 @@ bool cfg_load_w(const wchar_t *filename) {
 
     return result;
 }
+#endif
 
 char *cfg_get_value(const char *name) {
     for (size_t i = 0; i < value_count; ++i) {

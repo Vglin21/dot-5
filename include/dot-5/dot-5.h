@@ -6,8 +6,10 @@
 #include <dot-5/config.h>
 
 extern bool d5_load(const char *bin_filepath, const char *config_filepath);
+#ifdef _WIN32
 extern bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath);
+#endif
+
 extern void d5_run();
-extern void d5_exit();
 
 #endif

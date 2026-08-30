@@ -17,7 +17,9 @@ typedef uint64_t qword;
 
 extern byte mem_load_rom(byte *rom, byte size);
 extern byte mem_load_rom_from_file(const char *filename);
+#ifdef _WIN32
 extern byte mem_load_rom_from_file_w(const wchar_t *filename);
+#endif
 
 extern byte mem_read(byte address);
 extern void mem_write(byte address, byte value);

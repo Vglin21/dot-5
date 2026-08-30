@@ -55,6 +55,7 @@ static void __update() {
     while (SDL_PollEvent(&event)) switch (event.type) {
         case SDL_EVENT_QUIT: should_close = true; break;
         case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
             __resize();
             break;
         case SDL_EVENT_KEY_DOWN:
@@ -79,7 +80,9 @@ bool display_turn_on(const char *title, dword width, dword height, DisplayType t
         display_turn_off();
         return false;
     }
+#ifndef __EMSCRIPTEN__
     SDL_SetRenderVSync(renderer, 1);
+#endif
 
     target_time_step = 1.0 / 60.0;
     frequency = SDL_GetPerformanceFrequency();
@@ -179,7 +182,7 @@ void display_draw_pixel(dword color) {
     }
 }
 
-void display_draw_pixels(dword color, size_t count) {
+void display_draw_pixels(dword color, dword count) {
     if (signal) {
         while (count--) {
             signal_data[beam++] = color;

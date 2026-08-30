@@ -81,7 +81,7 @@ extern void display_set_window_size(dword width, dword height);
 extern void display_set_fullscreen(bool fullscreen);
 
 extern void display_draw_pixel(dword color);
-extern void display_draw_pixels(dword color, size_t count);
+extern void display_draw_pixels(dword color, dword count);
 
 extern void display_update();
 
