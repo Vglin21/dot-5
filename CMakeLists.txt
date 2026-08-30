@@ -21,7 +21,8 @@ if (EMSCRIPTEN)
         -sUSE_SDL=3
         -sALLOW_MEMORY_GROWTH=1
         -sFORCE_FILESYSTEM=1
-        --pre-js ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/preload.js
+        "SHELL:--pre-js ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/preload.js"
+        "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/shell.html"
     )
 
     add_custom_command(TARGET dot-5 POST_BUILD

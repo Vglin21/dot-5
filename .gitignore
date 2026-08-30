@@ -1,7 +1,7 @@
 *.exe
 *.dll
 *.data
-*.html
+bin/web/*.html
 *.wasm
 *.zip
 bin/web/dot-5.js
