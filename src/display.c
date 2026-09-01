@@ -50,8 +50,7 @@ static void __resize() {
 }
 
 #ifdef __EMSCRIPTEN__
-EMSCRIPTEN_KEEPALIVE
-void display_resize_web(int width, int height) {
+EMSCRIPTEN_KEEPALIVE void display_resize_web(int width, int height) {
     SDL_SetWindowSize(screen, width, height);
     __resize();
 }

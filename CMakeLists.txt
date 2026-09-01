@@ -35,6 +35,8 @@ else()
     list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/SDL3")
     find_package(SDL3 REQUIRED CONFIG)
     target_link_libraries(dot-5 PRIVATE SDL3::SDL3)
+
+    target_link_options(dot-5 PRIVATE -mwindows -municode)
 endif()
 
 if (NOT EMSCRIPTEN)
