@@ -1,6 +1,11 @@
 #include <dot-5/display.h>
 #include <SDL3/SDL.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 static SDL_Window *screen = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -30,7 +35,7 @@ static bool should_close = true;
 static void __resize() {
     dword width, height;
     SDL_GetWindowSize(screen, &width, &height);
-
+    
     if (height * aspect_ratio > width) {
         display_area.x = 0;
         display_area.w = width;
@@ -43,6 +48,14 @@ static void __resize() {
         display_area.x = (width >> 1) - display_area.w / 2;
     }
 }
+
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+void display_resize_web(int width, int height) {
+    SDL_SetWindowSize(screen, width, height);
+    __resize();
+}
+#endif
 
 static void __update() {
     Uint64 frame_start = SDL_GetPerformanceCounter();

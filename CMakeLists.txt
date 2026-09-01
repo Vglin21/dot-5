@@ -23,6 +23,7 @@ if (EMSCRIPTEN)
         -sFORCE_FILESYSTEM=1
         "SHELL:--pre-js ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/preload.js"
         "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/shell.html"
+        -sEXPORTED_FUNCTIONS=['_main','_display_resize_web']
     )
 
     add_custom_command(TARGET dot-5 POST_BUILD

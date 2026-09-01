@@ -25,17 +25,17 @@ typedef struct {
 } Label;
 
 const Opcode opcodes[] = {
-    {"inc", INC, 0,     0,     false},
-    {"dec", DEC, 0,     0,     false},
-    {"lda", 0,   LDA_I, LDA_Z, false},
-    {"sta", 0,   0,     STA,   false},
-    {"jmp", 0,   JMP,   JMP,   false},
-    {"beq", 0,   BEQ,   BEQ,   true },
-    {"bne", 0,   BNE,   BNE,   true },
-    {"add", 0,   ADD_I, ADD_Z, false},
-    {"sub", 0,   SUB_I, SUB_Z, false},
-    {"ora", 0,   ORA_I, ORA_Z, false},
-    {"and", 0,   AND_I, AND_Z, false}
+    {"INC", INC, 0,     0,     false},
+    {"DEC", DEC, 0,     0,     false},
+    {"LDA", 0,   LDA_I, LDA_Z, false},
+    {"STA", 0,   0,     STA,   false},
+    {"JMP", 0,   JMP,   JMP,   false},
+    {"BEQ", 0,   BEQ,   BEQ,   true },
+    {"BNE", 0,   BNE,   BNE,   true },
+    {"ADD", 0,   ADD_I, ADD_Z, false},
+    {"SUB", 0,   SUB_I, SUB_Z, false},
+    {"ORA", 0,   ORA_I, ORA_Z, false},
+    {"AND", 0,   AND_I, AND_Z, false}
 };
 
 Entry entries[248];
@@ -52,6 +52,11 @@ char label[4] = {0};
 byte bin[248] = {0};
 byte bc = 0;
 bool nl = false;
+
+void to_big_letters(char *str) {
+    for (dword c = 0; c < strlen(str); ++c)
+        if ('a' <= str[c] && str[c] <= 'z') str[c] -= 0x20;
+}
 
 bool is_hex(char hex) {
     return ('0' <= hex && hex <= '9') || ('a' <= hex && hex <= 'f') || ('A' <= hex && hex <= 'F');
@@ -96,7 +101,7 @@ void skip_space() { while (src[pos] == ' ' && pos < size) ++pos; }
 
 void get_name(Entry *entry) {
     memset(entry->name, 0, 4);
-    for (byte c = 0; c < 3 && 'a' <= src[pos] && src[pos] <= 'z' && pos < size; ++c) entry->name[c] = src[pos++];
+    for (byte c = 0; c < 3 && is_char(src[pos]) && pos < size; ++c) entry->name[c] = src[pos++];
 }
 
 void get_value(Entry *entry) {
@@ -114,6 +119,7 @@ void get_entry() {
     Entry *entry = &entries[entry_count];
 
     get_name(entry);
+    to_big_letters(entry->name);
     skip_space();
     entry->has_arg = false;
 
@@ -192,33 +198,65 @@ void to_bin(Entry entry) {
 
 #ifdef _WIN32
 int wmain(int argc, wchar_t *argv[]) {
+    wchar_t *src_file = NULL;
+    wchar_t *out_file = L"output.d5";
 #else
 int main(int argc, char *argv[]) {
+    char *src_file = NULL;
+    char *out_file = "output.d5";
 #endif
-    if (argc < 2) {
-        printf("d5asm.exe: error: no input file\n");
-        return 1;
+
+    bool error = false;
+
+    for (byte c = 1; c < argc; ++c) {
+#ifdef _WIN32
+        if (!wcscmp(argv[c], L"--h") || !wcscmp(argv[c], L"--help")) {
+#else
+        if (!strcmp(argv[c], "--h") || !strcmp(argv[c], "--help")) {
+#endif
+            printf(
+                "Usage: d5asm.exe [flags] file\n"
+                "Options:\n"
+                "  --help/--h - Display this message.\n"
+                "  -o <file> - Place the output into <file>.\n"
+            );
+            return 0;
+#ifdef _WIN32
+        } else if (!wcscmp(argv[c], L"-o")) {
+#else
+        } else if (!strcmp(argv[c], "-o")) {
+#endif
+            if (++c >= argc) {
+                printf("d5asm.exe: error: missing filename after \"-o\"\n");
+                error = true;
+            } else out_file = argv[c];
+        } else if (src_file != NULL) {
+#ifdef _WIN32
+            printf("d5asm.exe: warning: more than one file are given, any file after \"%ls\" will be skipped\n", src_file);
+#else
+            printf("d5asm.exe: warning: more than one file are given, any file after \"%s\" will be skipped\n", src_file);
+#endif
+        } else src_file = argv[c];
     }
 
-#ifdef _WIN32
-    if (!wcscmp(argv[1], L"--h") || !wcscmp(argv[1], L"--help")) {
-#else
-    if (!strcmp(argv[1], "--h") || !strcmp(argv[1], "--help")) {
-#endif
-        printf(
-            "Usage: d5asm.exe [source-file] [output-file-name](optional)\n"
-        );
-        return 0;
-    }
-    
     FILE *file;
+    if (!src_file) {
+        printf("d5asm.exe: error: no input file\n");
+        error = true;
+    } else {
 #ifdef _WIN32
-    if (!(file = _wfopen(argv[1], L"r"))) {
-        printf("d5asm.exe: error: %ls: no such file or directory\n", argv[1]);
+        if (!(file = _wfopen(src_file, L"r"))) {
+            printf("d5asm.exe: error: couldn't open \"%ls\"\n", src_file);
 #else
-    if (!(file = fopen(argv[1], "r"))) {
-        printf("d5asm.exe: error: %s: no such file or directory\n", argv[1]);
+        if (!(file = fopen(src_file, "r"))) {
+            printf("d5asm.exe: error: couldn't open \"%s\"\n", src_file);
 #endif
+            error = true;
+        }
+    }
+
+    if (error) {
+        printf("d5asm.exe: assembly terminated\n");
         return 1;
     }
 
@@ -227,7 +265,7 @@ int main(int argc, char *argv[]) {
     fseek(file, 0, SEEK_SET);
 
     if (!(src = (char*)malloc(size))) {
-        printf("d5asm.exe: error: an error occured\n");
+        printf("d5asm.exe: error: an error occured :(\n");
         fclose(file);
         return 1;
     }
@@ -259,9 +297,9 @@ int main(int argc, char *argv[]) {
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
 #ifdef _WIN32
-    if (!(file = _wfopen(argc < 3 ? L"output.d5" : argv[2], L"wb"))) return 1;
+    if (!(file = _wfopen(out_file, L"wb"))) return 1;
 #else
-    if (!(file = fopen(argc < 3 ? "output.d5" : argv[2], "wb"))) return 1;
+    if (!(file = fopen(out_file, "wb"))) return 1;
 #endif
     
     fwrite(bin, 1, 248, file);

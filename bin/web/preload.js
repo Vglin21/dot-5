@@ -1,6 +1,6 @@
 Module.preRun = Module.preRun || [];
 
-function fetchInto(url, virtual_path) {
+function fetch_into(url, virtual_path) {
     Module.addRunDependency(virtual_path);
     return fetch(url)
         .then(r => r.arrayBuffer())
@@ -11,6 +11,14 @@ function fetchInto(url, virtual_path) {
 }
 
 Module.preRun.push(function () {
-    fetchInto("rom.d5", "rom.d5");
-    fetchInto("config.cfg", "config.cfg");
+    fetch_into("rom.d5", "rom.d5");
+    fetch_into("config.cfg", "config.cfg");
 });
+
+function resize_canvas() {
+    const canvas = document.getElementById("canvas");
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    Module._display_resize_web(window.innerWidth, window.innerHeight);
+}
+window.addEventListener("resize", resize_canvas);
