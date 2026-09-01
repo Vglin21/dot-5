@@ -36,6 +36,8 @@ else()
     find_package(SDL3 REQUIRED CONFIG)
     target_link_libraries(dot-5 PRIVATE SDL3::SDL3)
 
+    enable_language(RC)
+    target_sources(dot-5 PRIVATE src/dot-5.rc)
     target_link_options(dot-5 PRIVATE -mwindows -municode)
 endif()
 
