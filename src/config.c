@@ -37,7 +37,7 @@ bool read_value() {
     ++pos;
     skip_space();
 
-    if (src[pos] == '\n' || src[pos] != '\r') return false;
+    if (src[pos] == '\n' || src[pos] == '\r') return false;
     
     for (int i = 0; pos < size && src[pos] != ' ' && src[pos] != '\n' && src[pos] != '\r' && i < 64; ++i)
         value->value[i] = src[pos++];
