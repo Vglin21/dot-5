@@ -4,11 +4,11 @@
 #include <string.h>
 
 typedef struct {
-    char name[65];
-    char value[65];
+    char key[CFG_MAX_KEY_LEN+1];
+    char value[CFG_MAX_VALUE_LEN+1];
 } Value;
 
-static Value values[128] = {0};
+static Value values[CFG_MAX_VALUES] = {0};
 static size_t value_count = 0;
 
 static char *src = NULL;
@@ -27,10 +27,12 @@ void skip_space() { while (pos < size && src[pos] == ' ') ++pos; }
 void skip_line() { while (pos < size && src[pos] != '\n' && src[pos] != '\r') ++pos; }
 
 bool read_value() {
+    if (value_count >= CFG_MAX_VALUES) return false;
+
     Value *value = &values[value_count];
 
-    for (int i = 0; pos < size && (is_char(src[pos]) || is_num(src[pos])) && i < 64; ++i)
-        value->name[i] = src[pos++];
+    for (int i = 0; pos < size && (is_char(src[pos]) || is_num(src[pos])) && i < CFG_MAX_KEY_LEN; ++i)
+        value->key[i] = src[pos++];
     skip_space();
 
     if (src[pos] != '=') return false;
@@ -39,7 +41,7 @@ bool read_value() {
 
     if (src[pos] == '\n' || src[pos] == '\r') return false;
     
-    for (int i = 0; pos < size && src[pos] != ' ' && src[pos] != '\n' && src[pos] != '\r' && i < 64; ++i)
+    for (int i = 0; pos < size && src[pos] != ' ' && src[pos] != '\n' && src[pos] != '\r' && i < CFG_MAX_VALUE_LEN; ++i)
         value->value[i] = src[pos++];
     ++value_count;
 
@@ -111,9 +113,22 @@ bool cfg_load_w(const wchar_t *filename) {
 }
 #endif
 
-char *cfg_get_value(const char *name) {
+char *cfg_get_value(const char *key) {
     for (size_t i = 0; i < value_count; ++i) {
-        if (!strcmp(values[i].name, name)) return values[i].value;
+        if (!strcmp(values[i].key, key)) return values[i].value;
     }
     return NULL;
+}
+void cfg_set_value(const char *key, const char *value) {
+    for (size_t i = 0; i < value_count; ++i) {
+        if (!strcmp(values[i].key, key)) {
+            strncpy(values[i].value, value, CFG_MAX_VALUE_LEN);
+            return;
+        }
+    }
+    
+    if (value_count < CFG_MAX_VALUES) {
+        strncpy(values[value_count].key, key, CFG_MAX_KEY_LEN);
+        strncpy(values[value_count++].value, value, CFG_MAX_VALUE_LEN);
+    }
 }

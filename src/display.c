@@ -32,7 +32,7 @@ static DisplayType display_type = 0;
 static const bool *keyboard = NULL;
 static bool should_close = true;
 
-static void __resize() {
+static void _resize() {
     dword width, height;
     SDL_GetWindowSize(screen, &width, &height);
     
@@ -52,11 +52,11 @@ static void __resize() {
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE void display_resize_web(int width, int height) {
     SDL_SetWindowSize(screen, width, height);
-    __resize();
+    _resize();
 }
 #endif
 
-static void __update() {
+static void _update() {
     Uint64 frame_start = SDL_GetPerformanceCounter();
 
     double frame_time = (double)(frame_start - frame_end) / frequency;
@@ -68,7 +68,7 @@ static void __update() {
         case SDL_EVENT_QUIT: should_close = true; break;
         case SDL_EVENT_WINDOW_RESIZED:
         case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-            __resize();
+            _resize();
             break;
         case SDL_EVENT_KEY_DOWN:
             switch (event.key.key) {
@@ -104,8 +104,8 @@ bool display_turn_on(const char *title, dword width, dword height, DisplayType t
     should_close = false;
     aspect_ratio = (double)width / height;
 
-    __update();
-    __resize();
+    _update();
+    _resize();
 
     return true;
 }
@@ -173,7 +173,7 @@ bool display_set_signal_size(word width, word height, word hblank, word vblank) 
 void display_set_fps(double fps) { target_time_step = 1.0 / fps; }
 void display_set_aspect_ratio(double ar) {
     aspect_ratio = ar;
-    __resize();
+    _resize();
 }
 void display_set_window_size(dword width, dword height) { SDL_SetWindowSize(screen, width, height); }
 void display_set_fullscreen(bool fullscreen) { SDL_SetWindowFullscreen(screen, fullscreen); }
@@ -218,6 +218,6 @@ void display_update() {
         SDL_RenderPresent(renderer);
         SDL_RenderClear(renderer);
 
-        __update();
+        _update();
     }
 }

@@ -1,5 +1,6 @@
 #include <dot-5/dot-5.h>
 #include <stdio.h>
+
 #ifdef _WIN32
 #include <direct.h>
 
@@ -24,40 +25,69 @@ char cfg[] = "# Display\n"
 "# Hotkeys\n"
 "close_window = KEY_ESCAPE\n"
 "toggle_fullscreen = KEY_F";
+#endif
 
+#ifdef __EMSCRIPTEN__
+int main(int argc, char *argv[]) {
+    if (!d5_load("rom.d5", "config.cfg")) return 1;
+
+    d5_run();
+
+    return 0;
+}
+#else
+
+#ifdef _WIN32
 int wmain(int argc, wchar_t *argv[]) {
     if (argc < 2) return 1;
 
-    wchar_t cfg_path[512];
+    wchar_t *bin_file = NULL;
+#else
+int main(int argc, char *argv[]) {
+    if (argc < 2) return 1;
+
+    char *bin_file = NULL;
+#endif
+
+    for (byte c = 1; c < argc; ++c) {
+#ifdef _WIN32
+        if (!wcscmp(argv[c], L"-f") || !wcscmp(argv[c], L"--fullscreen"))
+#else
+        if (!strcmp(argv[c], L"-f") || !strcmp(argv[c], L"--fullscreen"))
+#endif
+            d5_configure("fullscreen", "true");
+        else if (bin_file == NULL) bin_file = argv[c];
+    }
+
+    if (!bin_file) return 1;
+
+#ifdef _WIN32
+    wchar_t cfg_file[512];
     wchar_t *appdata = _wgetenv(L"APPDATA");
     
     if (appdata) {
-        swprintf(cfg_path, 512, L"%ls\\DOT-5", appdata);
+        swprintf(cfg_file, 512, L"%ls\\DOT-5", appdata);
         
-        _wmkdir(cfg_path);
+        _wmkdir(cfg_file);
         
-        swprintf(cfg_path, 512, L"%ls\\config.cfg", cfg_path);
-    } else wcscpy(cfg_path, L"config.cfg");
+        swprintf(cfg_file, 512, L"%ls\\config.cfg", cfg_file);
+    } else wcscpy(cfg_file, L"config.cfg");
 
     FILE *file;
-    if (!(file = _wfopen(cfg_path, L"r"))) {
-        if (!(file = _wfopen(cfg_path, L"w"))) return 1;
+    if (!(file = _wfopen(cfg_file, L"r"))) {
+        if (!(file = _wfopen(cfg_file, L"w"))) return 1;
         
         fwrite(cfg, 1, strlen(cfg), file);
 
         fclose(file);
     }
-
-    if (!d5_load_w(argv[1], cfg_path)) return 1;
-#else
-int main(int argc, char *argv[]) {
-    if (!d5_load("rom.d5", "config.cfg")) {
-        printf("d5_load failed - rom.d5 or config.cfg not found/loadable\n");
-        return 1;
-    }
+    
+    if (!d5_load_w(bin_file, cfg_file)) return 1;
 #endif
 
     d5_run();
 
     return 0;
 }
+
+#endif

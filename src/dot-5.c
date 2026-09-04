@@ -7,11 +7,6 @@
 #include <emscripten.h>
 #endif
 
-typedef struct {
-    char *name;
-    dword key;
-} Key;
-
 struct {
     struct {
         bool fullscreen;
@@ -35,6 +30,11 @@ struct {
         dword fullscreen;
     } input;
 } config;
+
+typedef struct {
+    char *name;
+    dword key;
+} Key;
 
 static Key keys[] = {
     {"KEY_A", DISPK_A},
@@ -66,13 +66,71 @@ static Key keys[] = {
 
     {"KEY_RETURN", DISPK_RETURN},
     {"KEY_ESCAPE", DISPK_ESCAPE},
+    {"KEY_BACKSPACE", DISPK_BACKSPACE},
     {"KEY_TAB", DISPK_TAB},
     {"KEY_SPACE", DISPK_SPACE},
 
+    {"KEY_MINUS", DISPK_MINUS},
+    {"KEY_EQUALS", DISPK_EQUALS},
+    {"KEY_LBRACKET", DISPK_LBRACKET},
+    {"KEY_RBRACKET", DISPK_RBRACKET},
+    {"KEY_BACKSLASH", DISPK_BACKSLASH},
+
+    {"KEY_SEMICOLON", DISPK_SEMICOLON},
+    {"KEY_APOSTROPHE", DISPK_APOSTROPHE},
+    {"KEY_GRAVE", DISPK_GRAVE},
+    {"KEY_COMMA", DISPK_COMMA},
+    {"KEY_PERIOD", DISPK_PERIOD},
+    {"KEY_SLASH", DISPK_SLASH},
+
+    {"KEY_CAPSLOCK", DISPK_CAPSLOCK},
+
+    {"KEY_F1", DISPK_F1},
+    {"KEY_F2", DISPK_F2},
+    {"KEY_F3", DISPK_F3},
+    {"KEY_F4", DISPK_F4},
+    {"KEY_F5", DISPK_F5},
+    {"KEY_F6", DISPK_F6},
+    {"KEY_F7", DISPK_F7},
+    {"KEY_F8", DISPK_F8},
+    {"KEY_F9", DISPK_F9},
+    {"KEY_F10", DISPK_F10},
+    {"KEY_F11", DISPK_F11},
+    {"KEY_F12", DISPK_F12},
+
+    {"KEY_PRINTSCREEN", DISPK_PRINTSCREEN},
+    {"KEY_SCROLLLOCK", DISPK_SCROLLLOCK},
+    {"KEY_PAUSE", DISPK_PAUSE},
+    {"KEY_INSERT", DISPK_INSERT},
+    {"KEY_HOME", DISPK_HOME},
+    {"KEY_PAGEUP", DISPK_PAGEUP},
+    {"KEY_DELETE", DISPK_DELETE},
+    {"KEY_END", DISPK_END},
+    {"KEY_PAGEDOWN", DISPK_PAGEDOWN},
+    
     {"KEY_RIGHT", DISPK_RIGHT},
     {"KEY_LEFT", DISPK_LEFT},
     {"KEY_DOWN", DISPK_DOWN},
     {"KEY_UP", DISPK_UP},
+
+    {"KEY_NUMLOCK", DISPK_NUMLOCK},
+    
+    {"KEY_KP_DIVIDE", DISPK_KP_DIVIDE},
+    {"KEY_KP_MULTIPLY", DISPK_KP_MULTIPLY},
+    {"KEY_KP_MINUS", DISPK_KP_MINUS},
+    {"KEY_KP_PLUS", DISPK_KP_PLUS},
+    {"KEY_KP_ENTER", DISPK_KP_ENTER},
+    {"KEY_KP_1", DISPK_KP_1},
+    {"KEY_KP_2", DISPK_KP_2},
+    {"KEY_KP_3", DISPK_KP_3},
+    {"KEY_KP_4", DISPK_KP_4},
+    {"KEY_KP_5", DISPK_KP_5},
+    {"KEY_KP_6", DISPK_KP_6},
+    {"KEY_KP_7", DISPK_KP_7},
+    {"KEY_KP_8", DISPK_KP_8},
+    {"KEY_KP_9", DISPK_KP_9},
+    {"KEY_KP_0", DISPK_KP_0},
+    {"KEY_KP_PERIOD", DISPK_KP_PERIOD},
 
     {"KEY_LCTRL", DISPK_LCTRL},
     {"KEY_LSHIFT", DISPK_LSHIFT},
@@ -219,4 +277,9 @@ void d5_run() {
 #endif
 
     display_turn_off();
+}
+
+void d5_configure(const char *key, const char *value) {
+    cfg_set_value(key, value);
+    configure();
 }

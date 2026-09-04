@@ -210,9 +210,9 @@ int main(int argc, char *argv[]) {
 
     for (byte c = 1; c < argc; ++c) {
 #ifdef _WIN32
-        if (!wcscmp(argv[c], L"--h") || !wcscmp(argv[c], L"--help")) {
+        if (!wcscmp(argv[c], L"-h") || !wcscmp(argv[c], L"--help")) {
 #else
-        if (!strcmp(argv[c], "--h") || !strcmp(argv[c], "--help")) {
+        if (!strcmp(argv[c], "-h") || !strcmp(argv[c], "--help")) {
 #endif
             printf(
                 "Usage: d5asm.exe [flags] file\n"

@@ -12,4 +12,6 @@ extern bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepat
 
 extern void d5_run();
 
+extern void d5_configure(const char *key, const char *value);
+
 #endif
