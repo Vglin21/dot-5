@@ -191,7 +191,6 @@ static void configure() {
     config.input.right      = (v = cfg_get_value("input_right")) ? get_key(v) : DISPK_RIGHT;
     config.input.exit       = (v = cfg_get_value("close_window")) ? get_key(v) : DISPK_ESCAPE;
     config.input.fullscreen = (v = cfg_get_value("toggle_fullscreen")) ? get_key(v) : DISPK_F;
-
 }
 
 static void d5_frame() {
