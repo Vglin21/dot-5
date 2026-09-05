@@ -1,10 +1,15 @@
 #include <dot-5/dot-5.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #include <direct.h>
+#elif __linux
+#include <sys/stat.h>
+#endif
 
+#ifndef __EMSCRIPTEN__
 char cfg[] = "# Display\n"
 "fullscreen = false\n"
 "window_width = 480\n"
@@ -89,6 +94,35 @@ int main(int argc, char *argv[]) {
     }
     
     if (!d5_load_w(bin_file, cfg_file)) return 1;
+#else
+    char cfg_file[512];
+    
+    FILE *file;
+    if (file = fopen("dot-5.cfg", "r")) {
+        strcpy(cfg_file, "dot-5.cfg");
+        fclose(file);
+    } else {
+        char *home = getenv("HOME");
+
+        if (home) {
+            char dir[512];
+            
+            snprintf(dir, 512, "%s/.config/DOT-5", home);
+            mkdir(dir, 0755);
+            
+            snprintf(cfg_file, 512, "%s/dot-5.cfg", dir);
+        } else strcpy(cfg_file, "dot-5.cfg");
+
+        if (!(file = fopen(cfg_file, "r"))) {
+            if (!(file = fopen(cfg_file, "w"))) return 1;
+            
+            fwrite(cfg, 1, strlen(cfg), file);
+    
+            fclose(file);
+        }
+    }
+
+    if (!d5_load(bin_file, cfg_file)) return 1;
 #endif
 
     d5_run();
