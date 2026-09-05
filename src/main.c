@@ -29,7 +29,7 @@ char cfg[] = "# Display\n"
 
 #ifdef __EMSCRIPTEN__
 int main(int argc, char *argv[]) {
-    if (!d5_load("rom.d5", "config.cfg")) return 1;
+    if (!d5_load("rom.d5", "dot-5.cfg")) return 1;
 
     d5_run();
 
@@ -63,23 +63,28 @@ int main(int argc, char *argv[]) {
 
 #ifdef _WIN32
     wchar_t cfg_file[512];
-    wchar_t *appdata = _wgetenv(L"APPDATA");
     
-    if (appdata) {
-        swprintf(cfg_file, 512, L"%ls\\DOT-5", appdata);
-        
-        _wmkdir(cfg_file);
-        
-        swprintf(cfg_file, 512, L"%ls\\config.cfg", cfg_file);
-    } else wcscpy(cfg_file, L"config.cfg");
-
     FILE *file;
-    if (!(file = _wfopen(cfg_file, L"r"))) {
-        if (!(file = _wfopen(cfg_file, L"w"))) return 1;
-        
-        fwrite(cfg, 1, strlen(cfg), file);
-
+    if (file = _wfopen(L"dot-5.cfg", L"r")) {
+        wcscpy(cfg_file, L"dot-5.cfg");
         fclose(file);
+    } else {
+        wchar_t *appdata = _wgetenv(L"APPDATA");
+
+        if (appdata) {
+            swprintf(cfg_file, 512, L"%ls\\DOT-5", appdata);
+            _wmkdir(cfg_file);
+            
+            swprintf(cfg_file, 512, L"%ls\\dot-5.cfg", cfg_file);
+        } else wcscpy(cfg_file, L"dot-5.cfg");
+
+        if (!(file = _wfopen(cfg_file, L"r"))) {
+            if (!(file = _wfopen(cfg_file, L"w"))) return 1;
+            
+            fwrite(cfg, 1, strlen(cfg), file);
+    
+            fclose(file);
+        }
     }
     
     if (!d5_load_w(bin_file, cfg_file)) return 1;

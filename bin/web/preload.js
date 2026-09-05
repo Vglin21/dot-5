@@ -12,7 +12,7 @@ function fetch_into(url, virtual_path) {
 
 Module.preRun.push(function () {
     fetch_into("rom.d5", "rom.d5");
-    fetch_into("config.cfg", "config.cfg");
+    fetch_into("dot-5.cfg", "dot-5.cfg");
 });
 
 function resize_canvas() {
