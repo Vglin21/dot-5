@@ -1,5 +1,6 @@
 #include <dot-5/dot-5.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
 #ifdef _WIN32
         if (!wcscmp(argv[c], L"-f") || !wcscmp(argv[c], L"--fullscreen"))
 #else
-        if (!strcmp(argv[c], L"-f") || !strcmp(argv[c], L"--fullscreen"))
+        if (!strcmp(argv[c], "-f") || !strcmp(argv[c], "--fullscreen"))
 #endif
             d5_configure("fullscreen", "true");
         else if (bin_file == NULL) bin_file = argv[c];
