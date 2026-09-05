@@ -28,7 +28,7 @@ Probably one of the worst fantasy consoles ever made.
 - SDL3
 - Emscripten SDK (for web version)
 
-### Building for Windows
+### Building for Windows/Linux
 ```sh
 # Clone the repository
 git clone https://github.com/Vglin21/dot-5
