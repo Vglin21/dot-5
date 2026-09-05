@@ -1,11 +1,8 @@
 *.exe
 *.dll
-*.data
-bin/web/*.html
-*.wasm
 *.zip
-bin/web/dot-5.js
 .vscode/
+bin/
 build/
 build-web/
 SDL3/

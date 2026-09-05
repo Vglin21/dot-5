@@ -15,6 +15,10 @@ typedef uint64_t qword;
 
 #endif
 
+#define RAM_SIZE 0x8
+#define ROM_SIZE 0xf8
+#define ROM_ENTRY_POINT (0x100 - ROM_SIZE)
+
 extern byte mem_load_rom(byte *rom, byte size);
 extern byte mem_load_rom_from_file(const char *filename);
 #ifdef _WIN32

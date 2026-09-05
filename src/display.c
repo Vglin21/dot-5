@@ -60,6 +60,9 @@ static void _update() {
     Uint64 frame_start = SDL_GetPerformanceCounter();
 
     double frame_time = (double)(frame_start - frame_end) / frequency;
+
+    if (frame_time > 0.25) frame_time = 0.5;
+
     accumulator += frame_time;
     frame_end = frame_start;
 

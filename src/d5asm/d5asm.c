@@ -3,6 +3,12 @@
 #include <string.h>
 #include <dot-5/cpu.h>
 
+#define ASM_NAME "d5asm.exe"
+#define MAX_LABEL_LEN 64
+#define MAX_LINE_LEN 256
+#define MAX_ENTRIES 248
+#define MAX_LABELS 128
+
 typedef struct {
     char name[4];
     byte no_arg;
@@ -16,11 +22,11 @@ typedef struct {
     byte arg;
     bool has_arg;
     bool imm;
-    char label[65];
+    char label[MAX_LABEL_LEN+1];
 } Entry;
 
 typedef struct {
-    char str[65];
+    char str[MAX_LABEL_LEN+1];
     byte address;
 } Label;
 
@@ -38,20 +44,17 @@ const Opcode opcodes[] = {
     {"AND", 0,   AND_I, AND_Z, false}
 };
 
-Entry entries[248];
+Entry entries[MAX_ENTRIES];
 byte entry_count = 0;
 
-Label labels[124];
+Label labels[MAX_LABELS];
 byte label_count = 0;
 
-char *src = NULL;
-dword pos = 0;
-dword size = 0;
-char ch = 0;
-char label[4] = {0};
-byte bin[248] = {0};
-byte bc = 0;
-bool nl = false;
+byte bin[ROM_SIZE] = {0};
+byte bin_count = 0;
+
+char line[MAX_LINE_LEN] = {0};
+word lpos = 0;
 
 void to_big_letters(char *str) {
     for (dword c = 0; c < strlen(str); ++c)
@@ -73,40 +76,42 @@ bool is_char(char ch) {
 byte get_hex() {
     char hex[17] = {0};
     byte hsize = 0;
-    qword shift = 0;
-    byte rvalue = 0;
+    byte shift = 0;
+    qword rvalue = 0;
 
-    while (hsize < 16 && is_hex(src[pos]) && pos < size)
-        hex[hsize++] = src[pos++];
+    while (hsize < 16 && is_hex(line[lpos]) && lpos < MAX_LINE_LEN)
+        hex[hsize++] = line[lpos++];
 
     for (byte c = hsize - 1; c < hsize; --c) {
         char h = hex[c];
+
         if ('0' <= h && h <= '9') rvalue += (hex[c] - '0') << shift;
         else if ('a' <= h && h <= 'f') rvalue += (hex[c] - 'a' + 0xa) << shift;
         else rvalue += (h - 'A' + 0xa) << shift;
+
         shift += 4;
     }
-    return rvalue;
+    return (byte)rvalue;
 }
 
 byte get_int() {
     char num[33] = {0};
-    for (byte c = 0; c < 32 && is_int(src[pos]) && pos < size; ++c) num[c] = src[pos++];
+    for (byte c = 0; c < 32 && is_int(line[lpos]) && lpos < MAX_LINE_LEN; ++c) num[c] = line[lpos++];
     return (byte)atoi(num);
 }
 
-void skip_line() { while (src[pos] != '\n' && pos < size) ++pos; }
+void skip_line() { while (line[lpos] != '\0' && line[lpos] != '\n' && lpos < MAX_LINE_LEN) ++lpos; }
 
-void skip_space() { while (src[pos] == ' ' && pos < size) ++pos; }
+void skip_space() { while (line[lpos] == ' ' && lpos < MAX_LINE_LEN) ++lpos; }
 
 void get_name(Entry *entry) {
     memset(entry->name, 0, 4);
-    for (byte c = 0; c < 3 && is_char(src[pos]) && pos < size; ++c) entry->name[c] = src[pos++];
+    for (byte c = 0; c < 3 && is_char(line[lpos]) && lpos < MAX_LINE_LEN; ++c) entry->name[c] = line[lpos++];
 }
 
 void get_value(Entry *entry) {
-    if (src[pos] == '$') {
-        ++pos;
+    if (line[lpos] == '$') {
+        ++lpos;
         entry->arg = get_hex();
         entry->has_arg = true;
     } else {
@@ -121,76 +126,75 @@ void get_entry() {
     get_name(entry);
     to_big_letters(entry->name);
     skip_space();
-    entry->has_arg = false;
 
-    if (src[pos] == '#') {
-        entry->imm = true;
-        ++pos;
-        skip_space();
+    if (line[lpos] == '\0' || line[lpos] == '\n') {
+        entry->has_arg = false;
+
+        ++bin_count;
+        ++entry_count;
+    } else {
+        if (line[lpos] == '#') {
+            entry->imm = true;
+            ++lpos;
+            if (!(line[lpos] == '$' || is_int(line[lpos]) || is_char(line[lpos]))) return;
+        }
+    
+        if (line[lpos] == '$' || is_int(line[lpos])) get_value(entry);
+        else if (is_char(line[lpos])) {
+            byte c = 0;
+            while ((is_char(line[lpos]) || is_int(line[lpos])) && c < MAX_LABEL_LEN) entry->label[c++] = line[lpos++];
+            entry->label[c] = '\0';
+            entry->has_arg = true;
+        }
+    
+        bin_count += 2;
+        ++entry_count;
     }
-
-    if (src[pos] == '$' || is_int(src[pos])) get_value(entry);
-    else if (is_char(src[pos])) {
-        byte c = 0;
-        while ((is_char(src[pos]) || is_int(src[pos])) && c < 64) entry->label[c++] = src[pos++];
-        entry->label[c] = '\0';
-        entry->has_arg = true;
-    }
-
-    if (entry->has_arg) bc += 2;
-    else ++bc;
-
-    ++entry_count;
 }
 
 void get_label() {
     Label *label = &labels[label_count];
     byte c = 0;
-    while ((is_char(src[pos]) || is_int(src[pos])) && c < 64) label->str[c++] = src[pos++];
+    while ((is_char(line[lpos]) || is_int(line[lpos])) && c < MAX_LABEL_LEN) label->str[c++] = line[lpos++];
     label->str[c] = '\0';
 
     skip_space();
 
-    if (src[pos] != '\n') {
-        if (src[pos] == '=') {
-            ++pos;
+    if (line[lpos] != '\n' && line[lpos] != '\0') {
+        if (line[lpos] == '=') {
+            ++lpos;
             skip_space();
         }
 
-        if (src[pos] == '$') {
-            ++pos;
+        if (line[lpos] == '$') {
+            ++lpos;
             label->address = get_hex();
-        } else if (is_int(src[pos])) label->address = get_int();
-    } else label->address = bc + 0x8;
+        } else if (is_int(line[lpos])) label->address = get_int();
+    } else label->address = bin_count + ROM_ENTRY_POINT;
 
     ++label_count;
 }
 
 void to_bin(Entry entry) {
-    for (byte c = 0; c < (sizeof(opcodes) / sizeof(Opcode)) && bc < 248; ++c) {
+    for (byte c = 0; c < (sizeof(opcodes) / sizeof(Opcode)) && bin_count < ROM_SIZE; ++c) {
         if (!strcmp(entry.name, opcodes[c].name)) {
             Opcode opcode = opcodes[c];
             if (entry.has_arg) {
                 if (entry.label[0] != '\0') {
                     for (byte i = 0; i < label_count; ++i) {
                         if (!strcmp(entry.label, labels[i].str)) {
-                            if (opcode.branch) entry.arg = labels[i].address - (bc + 0x8) - 2;
+                            if (opcode.branch) entry.arg = labels[i].address - (bin_count + ROM_ENTRY_POINT) - 2;
                             else entry.arg = labels[i].address;
                             break;
                         } 
                     }
                 }
 
-                if (entry.imm) {
-                    bin[bc++] = opcode.imm;
-                    if (bc >= 248) break;
-                    bin[bc++] = entry.arg;
-                } else {
-                    bin[bc++] = opcode.zp;
-                    if (bc >= 248) break;
-                    bin[bc++] = entry.arg;
-                }
-            } else bin[bc++] = opcode.no_arg;
+                if (entry.imm) bin[bin_count++] = opcode.imm;
+                else bin[bin_count++] = opcode.zp;
+
+                if (bin_count < ROM_SIZE) bin[bin_count++] = entry.arg;
+            } else bin[bin_count++] = opcode.no_arg;
             break;
         }
     }
@@ -215,9 +219,9 @@ int main(int argc, char *argv[]) {
         if (!strcmp(argv[c], "-h") || !strcmp(argv[c], "--help")) {
 #endif
             printf(
-                "Usage: d5asm.exe [flags] file\n"
+                "Usage: "ASM_NAME" [flags] file\n"
                 "Options:\n"
-                "  --help/--h - Display this message.\n"
+                "  -h --help - Display this message.\n"
                 "  -o <file> - Place the output into <file>.\n"
             );
             return 0;
@@ -227,73 +231,60 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(argv[c], "-o")) {
 #endif
             if (++c >= argc) {
-                printf("d5asm.exe: error: missing filename after \"-o\"\n");
+                printf(ASM_NAME": error: missing filename after \"-o\"\n");
                 error = true;
             } else out_file = argv[c];
         } else if (src_file != NULL) {
 #ifdef _WIN32
-            printf("d5asm.exe: warning: more than one file are given, any file after \"%ls\" will be skipped\n", src_file);
+            printf(ASM_NAME": warning: more than one file are given, any file after \"%ls\" will be skipped\n", src_file);
 #else
-            printf("d5asm.exe: warning: more than one file are given, any file after \"%s\" will be skipped\n", src_file);
+            printf(ASM_NAME": warning: more than one file are given, any file after \"%s\" will be skipped\n", src_file);
 #endif
         } else src_file = argv[c];
     }
 
     FILE *file;
     if (!src_file) {
-        printf("d5asm.exe: error: no input file\n");
+        printf(ASM_NAME": error: no input file\n");
         error = true;
     } else {
 #ifdef _WIN32
         if (!(file = _wfopen(src_file, L"r"))) {
-            printf("d5asm.exe: error: couldn't open \"%ls\"\n", src_file);
+            printf(ASM_NAME": error: couldn't open \"%ls\"\n", src_file);
 #else
         if (!(file = fopen(src_file, "r"))) {
-            printf("d5asm.exe: error: couldn't open \"%s\"\n", src_file);
+            printf(ASM_NAME": error: couldn't open \"%s\"\n", src_file);
 #endif
             error = true;
         }
     }
 
     if (error) {
-        printf("d5asm.exe: assembly terminated\n");
+        printf(ASM_NAME": assembly terminated\n");
+        if (file) fclose(file);
         return 1;
     }
-
-    fseek(file, 0, SEEK_END);
-    size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    if (!(src = (char*)malloc(size))) {
-        printf("d5asm.exe: error: an error occured :(\n");
-        fclose(file);
-        return 1;
-    }
-
-    size = fread(src, 1, size, file);
-
-    fclose(file);
     
-    nl = true;
+    while (fgets(line, 256, file)) {
+        bool nl = true;
+        lpos = 0;
+        
+        while (line[lpos] != '\n' && line[lpos] != '\0') {
+            char ch = line[lpos];
 
-    while (pos < size) {
-        ch = src[pos];
-        if (is_char(ch)) {
-            if (nl) get_label();
-            else get_entry();
-        } else if (ch == ';') skip_line();
-        else if (ch == '\n') {
-            nl = true;
-            ++pos;
-        } else {
-            ++pos;
+            if (is_char(ch)) {
+                if (nl) get_label();
+                else get_entry();
+            } else if (ch == ';') skip_line();
+            else ++lpos;
+
             nl = false;
         }
     }
 
-    free(src);
+    fclose(file);
 
-    bc = 0;
+    bin_count = 0;
     for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
 
 #ifdef _WIN32
@@ -302,8 +293,8 @@ int main(int argc, char *argv[]) {
     if (!(file = fopen(out_file, "wb"))) return 1;
 #endif
     
-    fwrite(bin, 1, 248, file);
-    printf("d5asm.exe: %d bytes written\n", bc);
+    fwrite(bin, 1, ROM_SIZE, file);
+    printf(ASM_NAME": %d bytes written\n", bin_count);
 
     fclose(file);
 

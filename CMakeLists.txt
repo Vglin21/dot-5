@@ -21,8 +21,8 @@ if (EMSCRIPTEN)
         -sUSE_SDL=3
         -sALLOW_MEMORY_GROWTH=1
         -sFORCE_FILESYSTEM=1
-        "SHELL:--pre-js ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/preload.js"
-        "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/shell.html"
+        "SHELL:--pre-js ${CMAKE_SOURCE_DIR}/src/web/preload.js"
+        "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/src/web/shell.html"
         -sEXPORTED_FUNCTIONS=['_main','_display_resize_web']
     )
 
@@ -30,6 +30,16 @@ if (EMSCRIPTEN)
         COMMAND ${CMAKE_COMMAND} -E rename
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/dot-5.html
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/index.html
+    )
+    add_custom_command(TARGET dot-5 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/src/web/rom.d5
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/rom.d5
+    )
+    add_custom_command(TARGET dot-5 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/src/web/dot-5.cfg
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/dot-5.cfg
     )
 else()
     list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/SDL3")
