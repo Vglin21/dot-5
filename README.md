@@ -49,7 +49,7 @@ cmake --build build-web
 ```
 
 ### Assembling and Running a Program
-- **NOTE:** The repository includes example assembly code for `d5asm` and already compiled `.d5` binary files for `dot-5` in `examples/`.
+- **NOTE:** The repository includes example assembly code for `d5asm` in `examples/`.
 
 ```sh
 # Assemble example source code
