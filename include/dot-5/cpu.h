@@ -1,5 +1,5 @@
-#ifndef _CPU_H_
-#define _CPU_H_
+#ifndef _D5_CPU_H_
+#define _D5_CPU_H_
 
 #include "memory_map.h"
 

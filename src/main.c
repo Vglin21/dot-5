@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         wcscpy(cfg_file, L"dot-5.cfg");
         fclose(file);
     } else {
-        wchar_t *appdata = _wgetenv(L"APPDATA");
+        wchar_t *appdata = _wgetenv(L"LOCALAPPDATA");
 
         if (appdata) {
             swprintf(cfg_file, 512, L"%ls\\DOT-5", appdata);

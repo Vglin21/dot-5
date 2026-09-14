@@ -15,18 +15,18 @@ static char *src = NULL;
 static long size = 0;
 static size_t pos = 0;
 
-bool is_char(char ch) {
+static bool is_char(char ch) {
     return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';
 }
 
-bool is_num(char num) {
+static bool is_num(char num) {
     return ('0' <= num && num <= '9');
 }
 
-void skip_space() { while (pos < size && src[pos] == ' ') ++pos; }
-void skip_line() { while (pos < size && src[pos] != '\n' && src[pos] != '\r') ++pos; }
+static void skip_space() { while (pos < size && src[pos] == ' ') ++pos; }
+static void skip_line() { while (pos < size && src[pos] != '\n' && src[pos] != '\r') ++pos; }
 
-bool read_value() {
+static bool read_value() {
     if (value_count >= CFG_MAX_VALUES) return false;
 
     Value *value = &values[value_count];
@@ -48,7 +48,7 @@ bool read_value() {
     return true;
 }
 
-bool read_values() {
+static bool read_values() {
     while (pos < size) {
         char ch = src[pos];
         if (is_char(ch)) {

@@ -1,8 +1,11 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _D5_CONFIG_H_
+#define _D5_CONFIG_H_
 
 #include <stdbool.h>
-#include <wchar.h>
+
+#ifdef _WIN32
+  #include <wchar.h>
+#endif
 
 #define CFG_MAX_KEY_LEN 64
 #define CFG_MAX_VALUE_LEN 64

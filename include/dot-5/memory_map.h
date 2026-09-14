@@ -1,9 +1,12 @@
-#ifndef __MEMORY_MAP_H_
-#define __MEMORY_MAP_H_
+#ifndef _D5_MEMORY_MAP_H_
+#define _D5_MEMORY_MAP_H_
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <wchar.h>
+
+#ifdef _WIN32
+  #include <wchar.h>
+#endif
 
 #ifndef __CUSTOM_TYPES_
 #define __CUSTOM_TYPES_

@@ -3,7 +3,11 @@
 #include <string.h>
 #include <dot-5/cpu.h>
 
-#define ASM_NAME "d5asm.exe"
+#ifdef _WIN32
+  #define ASM_NAME "d5asm.exe"
+#else
+  #define ASM_NAME "d5asm"
+#endif
 #define MAX_LABEL_LEN 64
 #define MAX_LINE_LEN 256
 #define MAX_ENTRIES 248
