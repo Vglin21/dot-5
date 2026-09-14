@@ -23,7 +23,7 @@ Probably one of the worst fantasy consoles ever made.
 ## Getting Started
 
 ### Prerequisites
-- A C compiler toolchain (MinGW-w64 + mingw32-make, MSVC etc.)
+- A C compiler toolchain
 - CMake (3.16+)
 - SDL3
 - Emscripten SDK (for web version)
