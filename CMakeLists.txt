@@ -48,6 +48,11 @@ if (EMSCRIPTEN)
             ${CMAKE_SOURCE_DIR}/src/web/dot-5.cfg
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/dot-5.cfg
     )
+    add_custom_command(TARGET dot-5 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/assets/icon.ico
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/favicon.ico
+    )
 else()
     list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/SDL3")
     find_package(SDL3 REQUIRED CONFIG)

@@ -4,9 +4,9 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
-#include <direct.h>
+  #include <direct.h>
 #elif __linux
-#include <sys/stat.h>
+  #include <sys/stat.h>
 #endif
 
 #ifndef __EMSCRIPTEN__
@@ -22,11 +22,17 @@ char cfg[] = "# Display\n"
 "background_color = e7e7e7\n"
 "pixel_color = 070707\n"
 "\n"
-"# Input\n"
-"input_up = KEY_UP\n"
-"input_left = KEY_LEFT\n"
-"input_down = KEY_DOWN\n"
-"input_right = KEY_RIGHT\n"
+"# Input (keyboard)\n"
+"input_key_up = KEY_UP\n"
+"input_key_left = KEY_LEFT\n"
+"input_key_down = KEY_DOWN\n"
+"input_key_right = KEY_RIGHT\n"
+"\n"
+"# Input (gamepad)\n"
+"input_gamepad_up = GAMEPAD_UP\n"
+"input_gamepad_left = GAMEPAD_LEFT\n"
+"input_gamepad_down = GAMEPAD_DOWN\n"
+"input_gamepad_right = GAMEPAD_RIGHT\n"
 "\n"
 "# Hotkeys\n"
 "close_window = KEY_ESCAPE\n"

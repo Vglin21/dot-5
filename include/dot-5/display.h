@@ -123,14 +123,35 @@ typedef enum {
     DISPK_RALT = 230
 } DisplayKey;
 
+typedef enum {
+    DISP_GAMEPAD_X = 1,
+    DISP_GAMEPAD_A,
+    DISP_GAMEPAD_B,
+    DISP_GAMEPAD_Y,
+    DISP_GAMEPAD_L1,
+    DISP_GAMEPAD_R1,
+    DISP_GAMEPAD_L2,
+    DISP_GAMEPAD_R2,
+    DISP_GAMEPAD_SELECT, 
+    DISP_GAMEPAD_ENTER,
+    DISP_GAMEPAD_L3,
+    DISP_GAMEPAD_R3,
+    DISP_GAMEPAD_UP,
+    DISP_GAMEPAD_DOWN,
+    DISP_GAMEPAD_LEFT,
+    DISP_GAMEPAD_RIGHT,
+} DisplayGamepadButton;
+
 extern bool display_turn_on(const char *title, dword width, dword height, DisplayType type);
 extern void display_turn_off();
 extern void display_close();
 
 extern bool display_should_close();
 extern bool display_is_key_pressed(DisplayKey key);
+extern bool display_is_gamepad_pressed(DisplayGamepadButton button);
 extern bool display_is_frame_active();
 extern bool display_is_fullscreen();
+extern bool display_is_gamepad_connected();
 
 extern bool display_set_signal_size(word width, word height, word hblank, word vblank);
 extern void display_set_fps(double fps);

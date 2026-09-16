@@ -22,10 +22,20 @@ struct {
     } rendering;
 
     struct {
-        dword up;
-        dword left;
-        dword down;
-        dword right;
+        struct {
+            dword up;
+            dword left;
+            dword down;
+            dword right;
+        } key;
+
+        struct {
+            dword up;
+            dword left;
+            dword down;
+            dword right;
+        } gamepad;
+
         dword exit;
         dword fullscreen;
     } input;
@@ -140,6 +150,28 @@ static Key keys[] = {
     {"KEY_RALT", DISPK_RALT}
 };
 
+static Key gamepad_map[] = {
+    {"GAMEPAD_A", DISP_GAMEPAD_A},
+    {"GAMEPAD_B", DISP_GAMEPAD_B},
+    {"GAMEPAD_X", DISP_GAMEPAD_X},
+    {"GAMEPAD_Y", DISP_GAMEPAD_Y},
+
+    {"GAMEPAD_ENTER", DISP_GAMEPAD_ENTER},
+    {"GAMEPAD_SELECT", DISP_GAMEPAD_SELECT},
+
+    {"GAMEPAD_L1", DISP_GAMEPAD_L1},
+    {"GAMEPAD_R1", DISP_GAMEPAD_R1},
+    {"GAMEPAD_L2", DISP_GAMEPAD_L2},
+    {"GAMEPAD_R2", DISP_GAMEPAD_R2},
+    {"GAMEPAD_L3", DISP_GAMEPAD_L3},
+    {"GAMEPAD_R3", DISP_GAMEPAD_R3},
+
+    {"GAMEPAD_UP", DISP_GAMEPAD_UP},
+    {"GAMEPAD_DOWN", DISP_GAMEPAD_DOWN},
+    {"GAMEPAD_LEFT", DISP_GAMEPAD_LEFT},
+    {"GAMEPAD_RIGHT", DISP_GAMEPAD_RIGHT}
+};
+
 static bool fullscreen = false;
 static word beam = 0;
 
@@ -147,6 +179,23 @@ static dword get_key(char *name) {
     for (size_t i = 0; i < sizeof(keys) / sizeof(Key); ++i) {
         if (!strcmp(keys[i].name, name)) return keys[i].key;
     }
+    return 0;
+}
+
+static dword get_gamepad(char *name) {
+    for (size_t i = 0; i < sizeof(gamepad_map) / sizeof(Key); ++i) {
+        if (!strcmp(gamepad_map[i].name, name)) return gamepad_map[i].key;
+    }
+    return 0;
+}
+
+static dword get_input(char *name) {
+    dword ret = get_key(name);
+    if (ret) return ret;
+
+    ret = get_gamepad(name);
+    if (ret) return ret;
+
     return 0;
 }
 
@@ -185,12 +234,18 @@ static void configure() {
     config.rendering.background = (v = cfg_get_value("background_color")) ? (hex_to_int(v) << 8) + 0xff : 0xe7e7e7ff;
     config.rendering.pixel      = (v = cfg_get_value("pixel_color")) ? (hex_to_int(v) << 8) + 0xff : 0x070707ff;
 
-    config.input.up         = (v = cfg_get_value("input_up")) ? get_key(v) : DISPK_UP;
-    config.input.left       = (v = cfg_get_value("input_left")) ? get_key(v) : DISPK_LEFT;
-    config.input.down       = (v = cfg_get_value("input_down")) ? get_key(v) : DISPK_DOWN;
-    config.input.right      = (v = cfg_get_value("input_right")) ? get_key(v) : DISPK_RIGHT;
-    config.input.exit       = (v = cfg_get_value("close_window")) ? get_key(v) : DISPK_ESCAPE;
-    config.input.fullscreen = (v = cfg_get_value("toggle_fullscreen")) ? get_key(v) : DISPK_F;
+    config.input.key.up         = (v = cfg_get_value("input_key_up")) ? get_key(v) : DISPK_UP;
+    config.input.key.left       = (v = cfg_get_value("input_key_left")) ? get_key(v) : DISPK_LEFT;
+    config.input.key.down       = (v = cfg_get_value("input_key_down")) ? get_key(v) : DISPK_DOWN;
+    config.input.key.right      = (v = cfg_get_value("input_key_right")) ? get_key(v) : DISPK_RIGHT;
+
+    config.input.gamepad.up         = (v = cfg_get_value("input_gamepad_up")) ? get_gamepad(v) : DISP_GAMEPAD_UP;
+    config.input.gamepad.left       = (v = cfg_get_value("input_gamepad_left")) ? get_gamepad(v) : DISP_GAMEPAD_LEFT;
+    config.input.gamepad.down       = (v = cfg_get_value("input_gamepad_down")) ? get_gamepad(v) : DISP_GAMEPAD_DOWN;
+    config.input.gamepad.right      = (v = cfg_get_value("input_gamepad_right")) ? get_gamepad(v) : DISP_GAMEPAD_RIGHT;
+
+    config.input.exit       = (v = cfg_get_value("close_window")) ? get_input(v) : DISPK_ESCAPE;
+    config.input.fullscreen = (v = cfg_get_value("toggle_fullscreen")) ? get_input(v) : DISPK_F;
 }
 
 static void d5_frame() {
@@ -218,10 +273,20 @@ static void d5_frame() {
                 ++beam;
             } else if (beam == 256) {
                 mem_write(0, 1);
-                if (display_is_key_pressed(config.input.right)) mem_write(0, mem_read(0) | 2);
-                if (display_is_key_pressed(config.input.left))  mem_write(0, mem_read(0) | 4);
-                if (display_is_key_pressed(config.input.down))  mem_write(0, mem_read(0) | 8);
-                if (display_is_key_pressed(config.input.up))    mem_write(0, mem_read(0) | 16);
+
+                byte input = 0;
+                if (display_is_gamepad_connected()) {
+                    if (display_is_gamepad_pressed(config.input.gamepad.right)) input |= 2;
+                    if (display_is_gamepad_pressed(config.input.gamepad.left))  input |= 4;
+                    if (display_is_gamepad_pressed(config.input.gamepad.down))  input |= 8;
+                    if (display_is_gamepad_pressed(config.input.gamepad.up))    input |= 16;
+                }
+                if (display_is_key_pressed(config.input.key.right)) input |= 2;
+                if (display_is_key_pressed(config.input.key.left))  input |= 4;
+                if (display_is_key_pressed(config.input.key.down))  input |= 8;
+                if (display_is_key_pressed(config.input.key.up))    input |= 16;
+
+                mem_write(0, mem_read(0) | input);
 
                 ++beam;
             } else if ((++beam) == 320) beam = 0;

@@ -32,6 +32,9 @@ static DisplayType display_type = 0;
 static const bool *keyboard = NULL;
 static bool should_close = true;
 
+static SDL_Joystick *gamepad = NULL;
+static bool gamepad_map[17] = {0};
+
 static void _resize() {
     dword width, height;
     SDL_GetWindowSize(screen, &width, &height);
@@ -66,6 +69,8 @@ static void _update() {
     accumulator += frame_time;
     frame_end = frame_start;
 
+    memset(gamepad_map, 0, 13);
+
     SDL_Event event;
     while (SDL_PollEvent(&event)) switch (event.type) {
         case SDL_EVENT_QUIT: should_close = true; break;
@@ -79,12 +84,33 @@ static void _update() {
                     if (event.key.mod & SDL_KMOD_ALT)
                         SDL_SetWindowFullscreen(screen, !(SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN));
             }
+            break;
+        case SDL_EVENT_JOYSTICK_ADDED:
+            if (!gamepad)
+                gamepad = SDL_OpenJoystick(event.jdevice.which);
+            break;
+        case SDL_EVENT_JOYSTICK_REMOVED:
+            if (gamepad && event.jdevice.which == SDL_GetJoystickID(gamepad)) {
+                SDL_CloseJoystick(gamepad);
+                gamepad = NULL;
+            }
+            break;
+        case SDL_EVENT_JOYSTICK_HAT_MOTION:
+            memset(&gamepad_map[13], 0, 4);
+
+            if (event.jhat.value & SDL_HAT_UP) gamepad_map[13] = true;
+            if (event.jhat.value & SDL_HAT_DOWN) gamepad_map[14] = true;
+            if (event.jhat.value & SDL_HAT_LEFT) gamepad_map[15] = true;
+            if (event.jhat.value & SDL_HAT_RIGHT) gamepad_map[16] = true;
     }
     keyboard = SDL_GetKeyboardState(NULL);
+
+    for (int i = 1; i < 13; ++i)
+        if (SDL_GetJoystickButton(gamepad, i-1)) gamepad_map[i] = true;
 }
 
 bool display_turn_on(const char *title, dword width, dword height, DisplayType type) {
-    if (!SDL_Init(SDL_INIT_VIDEO)) return false;
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK)) return false;
 
     if (!(screen = SDL_CreateWindow(title, width, height, 0))) {
         display_turn_off();
@@ -123,8 +149,10 @@ void display_close() { should_close = true; }
 
 bool display_should_close() { return should_close; }
 bool display_is_key_pressed(DisplayKey key) { return keyboard ? keyboard[key] : false; }
+bool display_is_gamepad_pressed(DisplayGamepadButton button) { return button < 17 ? gamepad_map[button] : false; }
 bool display_is_frame_active() { return accumulator >= target_time_step; }
 bool display_is_fullscreen() { return SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN; }
+bool display_is_gamepad_connected() { return gamepad != NULL; }
 
 bool display_set_signal_size(word width, word height, word hblank, word vblank) {
     if (screen) {
