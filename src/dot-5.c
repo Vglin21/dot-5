@@ -4,49 +4,15 @@
 #include <stdio.h>
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
+  #include <emscripten.h>
 #endif
-
-struct {
-    struct {
-        bool fullscreen;
-        dword width;
-        dword height;
-    } display;
-
-    float emulation_speed;
-
-    struct {
-        dword background;
-        dword pixel;
-    } rendering;
-
-    struct {
-        struct {
-            dword up;
-            dword left;
-            dword down;
-            dword right;
-        } key;
-
-        struct {
-            dword up;
-            dword left;
-            dword down;
-            dword right;
-        } gamepad;
-
-        dword exit;
-        dword fullscreen;
-    } input;
-} config;
 
 typedef struct {
     char *name;
     dword key;
 } Key;
 
-static Key keys[] = {
+static const Key keys[] = {
     {"KEY_A", DISPK_A},
     {"KEY_B", DISPK_B},
     {"KEY_C", DISPK_C},
@@ -150,7 +116,7 @@ static Key keys[] = {
     {"KEY_RALT", DISPK_RALT}
 };
 
-static Key gamepad_map[] = {
+static const Key gamepad_map[] = {
     {"GAMEPAD_A", DISP_GAMEPAD_A},
     {"GAMEPAD_B", DISP_GAMEPAD_B},
     {"GAMEPAD_X", DISP_GAMEPAD_X},
@@ -171,6 +137,42 @@ static Key gamepad_map[] = {
     {"GAMEPAD_LEFT", DISP_GAMEPAD_LEFT},
     {"GAMEPAD_RIGHT", DISP_GAMEPAD_RIGHT}
 };
+
+static struct {
+    struct {
+        bool fullscreen;
+        dword width;
+        dword height;
+        bool resizable;
+    } display;
+
+    float emulation_speed;
+
+    struct {
+        dword background;
+        dword pixel;
+        float aspect_ratio;
+    } rendering;
+
+    struct {
+        struct {
+            dword up;
+            dword left;
+            dword down;
+            dword right;
+        } key;
+
+        struct {
+            dword up;
+            dword left;
+            dword down;
+            dword right;
+        } gamepad;
+
+        dword exit;
+        dword fullscreen;
+    } input;
+} config;
 
 static bool fullscreen = false;
 static word beam = 0;
@@ -234,15 +236,15 @@ static void configure() {
     config.rendering.background = (v = cfg_get_value("background_color")) ? (hex_to_int(v) << 8) + 0xff : 0xe7e7e7ff;
     config.rendering.pixel      = (v = cfg_get_value("pixel_color")) ? (hex_to_int(v) << 8) + 0xff : 0x070707ff;
 
-    config.input.key.up         = (v = cfg_get_value("input_key_up")) ? get_key(v) : DISPK_UP;
-    config.input.key.left       = (v = cfg_get_value("input_key_left")) ? get_key(v) : DISPK_LEFT;
-    config.input.key.down       = (v = cfg_get_value("input_key_down")) ? get_key(v) : DISPK_DOWN;
-    config.input.key.right      = (v = cfg_get_value("input_key_right")) ? get_key(v) : DISPK_RIGHT;
+    config.input.key.up    = (v = cfg_get_value("input_key_up")) ? get_key(v) : DISPK_UP;
+    config.input.key.left  = (v = cfg_get_value("input_key_left")) ? get_key(v) : DISPK_LEFT;
+    config.input.key.down  = (v = cfg_get_value("input_key_down")) ? get_key(v) : DISPK_DOWN;
+    config.input.key.right = (v = cfg_get_value("input_key_right")) ? get_key(v) : DISPK_RIGHT;
 
-    config.input.gamepad.up         = (v = cfg_get_value("input_gamepad_up")) ? get_gamepad(v) : DISP_GAMEPAD_UP;
-    config.input.gamepad.left       = (v = cfg_get_value("input_gamepad_left")) ? get_gamepad(v) : DISP_GAMEPAD_LEFT;
-    config.input.gamepad.down       = (v = cfg_get_value("input_gamepad_down")) ? get_gamepad(v) : DISP_GAMEPAD_DOWN;
-    config.input.gamepad.right      = (v = cfg_get_value("input_gamepad_right")) ? get_gamepad(v) : DISP_GAMEPAD_RIGHT;
+    config.input.gamepad.up    = (v = cfg_get_value("input_gamepad_up")) ? get_gamepad(v) : DISP_GAMEPAD_UP;
+    config.input.gamepad.left  = (v = cfg_get_value("input_gamepad_left")) ? get_gamepad(v) : DISP_GAMEPAD_LEFT;
+    config.input.gamepad.down  = (v = cfg_get_value("input_gamepad_down")) ? get_gamepad(v) : DISP_GAMEPAD_DOWN;
+    config.input.gamepad.right = (v = cfg_get_value("input_gamepad_right")) ? get_gamepad(v) : DISP_GAMEPAD_RIGHT;
 
     config.input.exit       = (v = cfg_get_value("close_window")) ? get_input(v) : DISPK_ESCAPE;
     config.input.fullscreen = (v = cfg_get_value("toggle_fullscreen")) ? get_input(v) : DISPK_F;

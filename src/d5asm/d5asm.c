@@ -4,30 +4,75 @@
 #include <dot-5/cpu.h>
 
 #ifdef _WIN32
+  #include <locale.h>
+#endif
+
+#ifdef _WIN32
   #define ASM_NAME "d5asm.exe"
 #else
   #define ASM_NAME "d5asm"
 #endif
 #define MAX_LABEL_LEN 64
-#define MAX_LINE_LEN 256
-#define MAX_ENTRIES 248
+#define MAX_LINE_LEN 512
+#define MAX_SYMBOLS 248
 #define MAX_LABELS 128
+
+bool error = false;
+bool asm_error = false;
+bool line_read = false;
+
+char line[MAX_LINE_LEN] = {0};
+word line_count = 0;
+word lpos = 0;
+
+#ifdef _WIN32
+wchar_t *src_file = NULL;
+#else
+char src_file = NULL;
+#endif
+
+char serr[MAX_LINE_LEN];
+
+void logerr(const char *msg) {
+#ifdef _WIN32
+    wprintf(L"%ls:%d:%d: error: %s\n", src_file, line_count, lpos, msg);
+#else
+    printf("%s:%d:%d: error: %s\n", src_file, line_count, lpos, msg);
+#endif
+
+    if (line[strlen(line)-1] == '\n') printf("| %s", line);
+    else printf("| %s\n", line);
+
+    memset(serr, 0, MAX_LINE_LEN);
+    memset(serr, ' ', lpos);
+    printf("| %s^\n", serr);
+
+    error = true;
+}
 
 typedef struct {
     char name[4];
     byte no_arg;
     byte imm;
     byte zp;
-    bool branch;
+    byte type;
 } Opcode;
+
+typedef enum {
+    OT_BRANCH = 1
+} OpcodeType;
 
 typedef struct {
     char name[4];
     byte arg;
-    bool has_arg;
-    bool imm;
     char label[MAX_LABEL_LEN+1];
-} Entry;
+    byte flags;
+} Symbol;
+
+typedef enum {
+    SF_HAS_ARG = 1,
+    SF_IMMEDIATE = 2
+} SymbolFlag;
 
 typedef struct {
     char str[MAX_LABEL_LEN+1];
@@ -35,169 +80,273 @@ typedef struct {
 } Label;
 
 const Opcode opcodes[] = {
-    {"INC", INC, 0,     0,     false},
-    {"DEC", DEC, 0,     0,     false},
-    {"LDA", 0,   LDA_I, LDA_Z, false},
-    {"STA", 0,   0,     STA,   false},
-    {"JMP", 0,   JMP,   JMP,   false},
-    {"BEQ", 0,   BEQ,   BEQ,   true },
-    {"BNE", 0,   BNE,   BNE,   true },
-    {"ADD", 0,   ADD_I, ADD_Z, false},
-    {"SUB", 0,   SUB_I, SUB_Z, false},
-    {"ORA", 0,   ORA_I, ORA_Z, false},
-    {"AND", 0,   AND_I, AND_Z, false}
+    {"INC", INC, 0,     0,     0},
+    {"DEC", DEC, 0,     0,     0},
+    {"LDA", 0,   LDA_I, LDA_Z, 0},
+    {"STA", 0,   0,     STA,   0},
+    {"JMP", 0,   JMP,   JMP,   0},
+    {"BEQ", 0,   BEQ,   BEQ,   1},
+    {"BNE", 0,   BNE,   BNE,   1},
+    {"ADD", 0,   ADD_I, ADD_Z, 0},
+    {"SUB", 0,   SUB_I, SUB_Z, 0},
+    {"ORA", 0,   ORA_I, ORA_Z, 0},
+    {"AND", 0,   AND_I, AND_Z, 0}
 };
 
-Entry entries[MAX_ENTRIES];
-byte entry_count = 0;
+Symbol symbols[MAX_SYMBOLS];
+word symbol_count = 0;
 
 Label labels[MAX_LABELS];
-byte label_count = 0;
+word label_count = 0;
 
 byte bin[ROM_SIZE] = {0};
 byte bin_count = 0;
-
-char line[MAX_LINE_LEN] = {0};
-word lpos = 0;
 
 void to_big_letters(char *str) {
     for (dword c = 0; c < strlen(str); ++c)
         if ('a' <= str[c] && str[c] <= 'z') str[c] -= 0x20;
 }
 
-bool is_hex(char hex) {
-    return ('0' <= hex && hex <= '9') || ('a' <= hex && hex <= 'f') || ('A' <= hex && hex <= 'F');
-}
-
-bool is_int(char num) {
+bool is_digit(char num) {
     return '0' <= num && num <= '9';
 }
 
-bool is_char(char ch) {
+bool is_letter(char ch) {
     return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z');
 }
 
-byte get_hex() {
+bool is_hex(char hex) {
+    return is_digit(hex) || ('a' <= hex && hex <= 'f') || ('A' <= hex && hex <= 'F');
+}
+
+bool is_eol() {
+    if (lpos >= MAX_LINE_LEN) return true;
+
+    char ch = line[lpos];
+    return ch == '\n' || ch == '\r' || ch == '\0';
+}
+
+bool is_empty() {
+    if (is_eol()) return true;
+    else return line[lpos] == ' ';
+}
+
+void skip_line() { while (!is_eol()) ++lpos; }
+
+void skip_space() { while (!is_eol() && line[lpos] == ' ') ++lpos; }
+
+byte read_hex() {
     char hex[17] = {0};
     byte hsize = 0;
     byte shift = 0;
-    qword rvalue = 0;
+    qword ret = 0;
 
-    while (hsize < 16 && is_hex(line[lpos]) && lpos < MAX_LINE_LEN)
+    skip_space();
+
+    while (!is_eol() && hsize < 16 && is_hex(line[lpos]))
         hex[hsize++] = line[lpos++];
+    
+    if (!is_eol() && is_hex(line[lpos])) {
+        logerr("hex value is too long");
+        while (!is_eol() && is_hex(line[lpos])) ++lpos;
+    }
+    
+    if (!is_empty()) {
+        logerr("unexpected symbol");
+        while (!is_empty()) ++lpos;
+    }
 
-    for (byte c = hsize - 1; c < hsize; --c) {
-        char h = hex[c];
+    if (error) return 0;
 
-        if ('0' <= h && h <= '9') rvalue += (hex[c] - '0') << shift;
-        else if ('a' <= h && h <= 'f') rvalue += (hex[c] - 'a' + 0xa) << shift;
-        else rvalue += (h - 'A' + 0xa) << shift;
+    for (byte c = hsize - 1; c < hsize;) {
+        char h = hex[c--];
+
+        if ('0' <= h && h <= '9') ret += (h - '0') << shift;
+        else if ('a' <= h && h <= 'f') ret += (h - 'a' + 0xa) << shift;
+        else ret += (h - 'A' + 0xa) << shift;
 
         shift += 4;
     }
-    return (byte)rvalue;
+    return (byte)ret;
 }
 
-byte get_int() {
+byte read_decimal() {
     char num[33] = {0};
-    for (byte c = 0; c < 32 && is_int(line[lpos]) && lpos < MAX_LINE_LEN; ++c) num[c] = line[lpos++];
+    
+    byte c = 0;
+    while (c < 32 && is_digit(line[lpos]) && lpos < MAX_LINE_LEN)
+        num[c++] = line[lpos++];
+    
+    if (lpos < MAX_LINE_LEN && is_digit(line[lpos])) {
+        logerr("decimal value is too long");
+        while (!is_eol() && is_digit(line[lpos])) ++lpos;
+    }
+    
+    if (!is_empty()) {
+        logerr("unexpected symbol");
+        while (!is_empty()) ++lpos;
+    }
+
+    if (error) return 0;
+    
     return (byte)atoi(num);
 }
 
-void skip_line() { while (line[lpos] != '\0' && line[lpos] != '\n' && lpos < MAX_LINE_LEN) ++lpos; }
+void read_symbol_name(Symbol *symb) {
+    memset(symb->name, 0, 4);
 
-void skip_space() { while (line[lpos] == ' ' && lpos < MAX_LINE_LEN) ++lpos; }
+    byte c = 0;
+    while (!is_eol() && c < 3 && is_letter(line[lpos]))
+        symb->name[c++] = line[lpos++];
+    
+    to_big_letters(symb->name);
+    
+    if (!is_empty()) {
+        if (is_letter(line[lpos])) logerr("operation name is too long");
+        else logerr("unexpected symbol");
+        
+        while (!is_empty()) ++lpos;
+        return;
+    }
+    
+    for (c = 0; c < (sizeof(opcodes) / sizeof(Opcode));) {
+        Opcode opcode = opcodes[c++];
+        if (!strcmp(opcode.name, symb->name)) return;
+    }
 
-void get_name(Entry *entry) {
-    memset(entry->name, 0, 4);
-    for (byte c = 0; c < 3 && is_char(line[lpos]) && lpos < MAX_LINE_LEN; ++c) entry->name[c] = line[lpos++];
+    logerr("unrecognized operation");
 }
 
-void get_value(Entry *entry) {
+void read_symbol_value(Symbol *symb) {
+    symb->flags |= SF_HAS_ARG;
     if (line[lpos] == '$') {
         ++lpos;
-        entry->arg = get_hex();
-        entry->has_arg = true;
-    } else {
-        entry->arg = get_int();
-        entry->has_arg = true;
-    }
+
+        if (is_empty()) {
+            logerr("expected a value");
+            return;
+        }
+
+        symb->arg = read_hex();
+    } else symb->arg = read_decimal();
 }
 
-void get_entry() {
-    Entry *entry = &entries[entry_count];
+void read_symbol() {
+    Symbol *symb = &symbols[symbol_count];
+    memset(symb, 0, sizeof(Symbol));
 
-    get_name(entry);
-    to_big_letters(entry->name);
+    read_symbol_name(symb);
+    
     skip_space();
 
-    if (line[lpos] == '\0' || line[lpos] == '\n') {
-        entry->has_arg = false;
-
+    if (is_eol()) {
         ++bin_count;
-        ++entry_count;
+        ++symbol_count;
     } else {
         if (line[lpos] == '#') {
-            entry->imm = true;
+            symb->flags |= SF_IMMEDIATE;
             ++lpos;
-            if (!(line[lpos] == '$' || is_int(line[lpos]) || is_char(line[lpos]))) return;
         }
-    
-        if (line[lpos] == '$' || is_int(line[lpos])) get_value(entry);
-        else if (is_char(line[lpos])) {
+
+        if (is_empty(line[lpos])) logerr("expected a value");
+        else if (line[lpos] == '$' || is_digit(line[lpos])) read_symbol_value(symb);
+        else if (is_letter(line[lpos])) {
             byte c = 0;
-            while ((is_char(line[lpos]) || is_int(line[lpos])) && c < MAX_LABEL_LEN) entry->label[c++] = line[lpos++];
-            entry->label[c] = '\0';
-            entry->has_arg = true;
+            while (!is_eol() && (is_letter(line[lpos]) || is_digit(line[lpos])) && c < MAX_LABEL_LEN)
+                symb->label[c++] = line[lpos++];
+            
+            symb->label[c] = '\0';
+            symb->flags |= SF_HAS_ARG;
+
+            if (!is_empty()) {
+                logerr("unexpected symbol");
+                while (!is_empty()) ++lpos;
+            }
         }
     
-        bin_count += 2;
-        ++entry_count;
+        if (!error) {
+            bin_count += 2;
+            ++symbol_count;
+        }
     }
+
+    line_read = true;
 }
 
-void get_label() {
+void read_label() {
     Label *label = &labels[label_count];
+    memset(label, 0, sizeof(Label));
+
     byte c = 0;
-    while ((is_char(line[lpos]) || is_int(line[lpos])) && c < MAX_LABEL_LEN) label->str[c++] = line[lpos++];
+    while (!is_eol() && (is_letter(line[lpos]) || is_digit(line[lpos])) && c < MAX_LABEL_LEN)
+        label->str[c++] = line[lpos++];
     label->str[c] = '\0';
 
     skip_space();
 
-    if (line[lpos] != '\n' && line[lpos] != '\0') {
-        if (line[lpos] == '=') {
-            ++lpos;
-            skip_space();
-        }
+    if (!is_eol()) {
+        if (line[lpos] != '=' && line[lpos] != ':') {
+            logerr("unexpected symbol");
+            while (!is_empty()) ++lpos;
+        } else {
+            if (line[lpos] == '=') {
+                ++lpos;
+                skip_space();
+    
+                if (line[lpos] == '$') {
+                    ++lpos;
 
-        if (line[lpos] == '$') {
-            ++lpos;
-            label->address = get_hex();
-        } else if (is_int(line[lpos])) label->address = get_int();
+                    if (is_empty()) {
+                        logerr("expected a value");
+                        line_read = true;
+                        return;
+                    }
+
+                    label->address = read_hex();
+                } else if (is_digit(line[lpos])) label->address = read_decimal();
+                else {
+                    logerr("unexpected symbol");
+                    while (!is_empty()) ++lpos;
+                }
+
+                line_read = true;
+            } else {
+                label->address = bin_count + ROM_ENTRY_POINT;
+                ++lpos;
+            }
+        }
     } else label->address = bin_count + ROM_ENTRY_POINT;
 
-    ++label_count;
+    if (!error) ++label_count;
 }
 
-void to_bin(Entry entry) {
+void to_bin(Symbol symb) {
     for (byte c = 0; c < (sizeof(opcodes) / sizeof(Opcode)) && bin_count < ROM_SIZE; ++c) {
-        if (!strcmp(entry.name, opcodes[c].name)) {
+        if (!strcmp(symb.name, opcodes[c].name)) {
             Opcode opcode = opcodes[c];
-            if (entry.has_arg) {
-                if (entry.label[0] != '\0') {
+            if (symb.flags & SF_HAS_ARG) {
+                if (symb.label[0] != '\0') {
+                    bool found = false;
+
                     for (byte i = 0; i < label_count; ++i) {
-                        if (!strcmp(entry.label, labels[i].str)) {
-                            if (opcode.branch) entry.arg = labels[i].address - (bin_count + ROM_ENTRY_POINT) - 2;
-                            else entry.arg = labels[i].address;
+                        if (!strcmp(symb.label, labels[i].str)) {
+                            if (opcode.type & OT_BRANCH) symb.arg = labels[i].address - (bin_count + ROM_ENTRY_POINT) - 2;
+                            else symb.arg = labels[i].address;
+                            found = true;
                             break;
-                        } 
+                        }
+                    }
+
+                    if (!found) {
+                        printf(ASM_NAME": error: label \"%s\" is undefined\n", symb.label);
+                        asm_error = true;
                     }
                 }
 
-                if (entry.imm) bin[bin_count++] = opcode.imm;
+                if (symb.flags & SF_IMMEDIATE) bin[bin_count++] = opcode.imm;
                 else bin[bin_count++] = opcode.zp;
 
-                if (bin_count < ROM_SIZE) bin[bin_count++] = entry.arg;
+                if (bin_count < ROM_SIZE) bin[bin_count++] = symb.arg;
             } else bin[bin_count++] = opcode.no_arg;
             break;
         }
@@ -205,23 +354,29 @@ void to_bin(Entry entry) {
 }
 
 #ifdef _WIN32
-int wmain(int argc, wchar_t *argv[]) {
-    wchar_t *src_file = NULL;
-    wchar_t *out_file = L"output.d5";
+
+#define char wchar_t
+#define s(a) L##a
+#define sfmt "%ls"
+
+#define main wmain
+#define strcmp(a, b) wcscmp(a, b)
+#define fopen(a, b) _wfopen(a, b)
+
 #else
-int main(int argc, char *argv[]) {
-    char *src_file = NULL;
-    char *out_file = "output.d5";
+  #define s(a) a
+  #define sfmt "%s"
 #endif
 
-    bool error = false;
+int main(int argc, char *argv[]) {
+#ifdef _WIN32
+    setlocale(LC_ALL, "");
+#endif
+
+    char *out_file = s("output.d5");
 
     for (byte c = 1; c < argc; ++c) {
-#ifdef _WIN32
-        if (!wcscmp(argv[c], L"-h") || !wcscmp(argv[c], L"--help")) {
-#else
-        if (!strcmp(argv[c], "-h") || !strcmp(argv[c], "--help")) {
-#endif
+        if (!strcmp(argv[c], s("-h")) || !strcmp(argv[c], s("--help"))) {
             printf(
                 "Usage: "ASM_NAME" [flags] file\n"
                 "Options:\n"
@@ -229,22 +384,14 @@ int main(int argc, char *argv[]) {
                 "  -o <file> - Place the output into <file>.\n"
             );
             return 0;
-#ifdef _WIN32
-        } else if (!wcscmp(argv[c], L"-o")) {
-#else
-        } else if (!strcmp(argv[c], "-o")) {
-#endif
+        } else if (!strcmp(argv[c], s("-o"))) {
             if (++c >= argc) {
                 printf(ASM_NAME": error: missing filename after \"-o\"\n");
                 error = true;
             } else out_file = argv[c];
-        } else if (src_file != NULL) {
-#ifdef _WIN32
-            printf(ASM_NAME": warning: more than one file are given, any file after \"%ls\" will be skipped\n", src_file);
-#else
-            printf(ASM_NAME": warning: more than one file are given, any file after \"%s\" will be skipped\n", src_file);
-#endif
-        } else src_file = argv[c];
+        } else if (src_file != NULL)
+            printf(ASM_NAME": warning: more than one file are given, any file after \""sfmt"\" will be skipped\n", src_file);
+        else src_file = argv[c];
     }
 
     FILE *file;
@@ -252,13 +399,8 @@ int main(int argc, char *argv[]) {
         printf(ASM_NAME": error: no input file\n");
         error = true;
     } else {
-#ifdef _WIN32
-        if (!(file = _wfopen(src_file, L"r"))) {
-            printf(ASM_NAME": error: couldn't open \"%ls\"\n", src_file);
-#else
-        if (!(file = fopen(src_file, "r"))) {
-            printf(ASM_NAME": error: couldn't open \"%s\"\n", src_file);
-#endif
+        if (!(file = fopen(src_file, s("r")))) {
+            printf(ASM_NAME": error: couldn't open \""sfmt"\"\n", src_file);
             error = true;
         }
     }
@@ -272,35 +414,49 @@ int main(int argc, char *argv[]) {
     while (fgets(line, 256, file)) {
         bool nl = true;
         lpos = 0;
+        ++line_count;
+        error = false;
+        line_read = false;
         
-        while (line[lpos] != '\n' && line[lpos] != '\0') {
+        while (!is_eol(line[lpos])) {
             char ch = line[lpos];
 
-            if (is_char(ch)) {
-                if (nl) get_label();
-                else get_entry();
+            if (is_empty()) ++lpos;
+            else if (is_letter(ch)) {
+                if (nl)
+                    read_label();
+                else if (line_read) {
+                    logerr("can't take more than one operand");
+                    while (!is_empty()) ++lpos;
+                } else
+                    read_symbol();
             } else if (ch == ';') skip_line();
-            else ++lpos;
+            else {
+                logerr("unexpected symbol");
+                while (!is_empty()) ++lpos;
+            }
 
             nl = false;
+            if (error) asm_error = true;
         }
     }
 
     fclose(file);
 
     bin_count = 0;
-    for (byte c = 0; c < entry_count; ++c) to_bin(entries[c]);
+    for (byte c = 0; c < symbol_count; ++c) to_bin(symbols[c]);
 
-#ifdef _WIN32
-    if (!(file = _wfopen(out_file, L"wb"))) return 1;
-#else
-    if (!(file = fopen(out_file, "wb"))) return 1;
-#endif
+    if (error || asm_error) {
+        printf(ASM_NAME": assembly terminated\n");
+        return 1;
+    } else {
+        if (!(file = fopen(out_file, s("wb")))) return 1;
+        
+        fwrite(bin, 1, ROM_SIZE, file);
+        printf(ASM_NAME": %d bytes written\n", bin_count);
     
-    fwrite(bin, 1, ROM_SIZE, file);
-    printf(ASM_NAME": %d bytes written\n", bin_count);
-
-    fclose(file);
+        fclose(file);
+    }
 
     return 0;
 }

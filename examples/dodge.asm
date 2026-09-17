@@ -15,7 +15,7 @@ rand     = $6
 turnTime = $7
 
 ; code
-reset
+reset:
   lda #$d7
   sta pixel0
   lda #$d
@@ -27,7 +27,7 @@ reset
   lda #1
   sta pixel4
 
-start
+start:
   lda flags
   and #inpRight
   beq moveLeft
@@ -48,7 +48,7 @@ start
   inc
   sta pixel0
 
-moveLeft
+moveLeft:
   lda flags
   and #inpLeft
   beq checkPause
@@ -68,12 +68,12 @@ moveLeft
   dec
   sta pixel0
 
-checkPause
+checkPause:
   lda pixel4
   beq movePixel1
   jmp reset
 
-movePixel1
+movePixel1:
   lda pixel1
   and #$f0
   bne movePixel2
@@ -86,7 +86,7 @@ movePixel1
   add #$5e
   sta rand
 
-movePixel2
+movePixel2:
   lda pixel2
   and #$f0
   bne movePixel3
@@ -99,7 +99,7 @@ movePixel2
   add #$99
   sta rand
 
-movePixel3
+movePixel3:
   lda pixel3
   and #$f0
   bne checkDir
@@ -112,7 +112,7 @@ movePixel3
   add #$eb
   sta rand
 
-checkDir
+checkDir:
   lda turnTime
   and #$f
   bne decCounter
@@ -124,16 +124,16 @@ checkDir
   lda #$85
   sta turnTime
   bne decCounter
-turnRight
+turnRight:
   lda #$5
   sta turnTime
 
-decCounter
+decCounter:
   lda turnTime
   dec
   sta turnTime
 
-movePixelsLeft
+movePixelsLeft:
   lda turnTime
   and #$80
   beq movePixelsRight
@@ -151,7 +151,7 @@ movePixelsLeft
   lda #0
   beq checkCollisions
 
-movePixelsRight
+movePixelsRight:
   lda pixel1
   add #$11
   sta pixel1
@@ -162,7 +162,7 @@ movePixelsRight
   add #$11
   sta pixel3
 
-checkCollisions
+checkCollisions:
   lda pixel1
   sub pixel0
   beq collisionTrue
@@ -174,14 +174,14 @@ checkCollisions
   lda pixel3
   sub pixel0
   bne endVBlank
-collisionTrue
+collisionTrue:
   lda #1
   sta pixel4
 
-endVBlank
+endVBlank:
   lda #0
   sta flags
-wait
+wait:
   lda flags
   beq wait
   jmp start

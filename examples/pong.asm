@@ -15,11 +15,11 @@ dirX   = $6
 dirY   = $7
 
 ; code
-reset
+reset:
   lda #$7f
   sta pixel2
 
-start
+start:
   lda flags
   and #inpDown
   beq moveUp
@@ -28,7 +28,7 @@ start
   add #$10
   sta pixel0
 
-moveUp
+moveUp:
   lda flags
   and #inpUp
   beq setPixel1
@@ -37,12 +37,12 @@ moveUp
   sub #$10
   sta pixel0
 
-setPixel1
+setPixel1:
   lda pixel0
   add #$10
   sta pixel1
 
-moveBallX
+moveBallX:
   lda dirX
   beq moveBallLeft
 
@@ -52,12 +52,12 @@ moveBallX
 
   lda #0
   beq moveBallY
-moveBallLeft
+moveBallLeft:
   lda pixel4
   dec
   sta pixel4
 
-moveBallY
+moveBallY:
   lda dirY
   beq moveBallUp
 
@@ -67,12 +67,12 @@ moveBallY
 
   lda #0
   beq checkBoundsY
-moveBallUp
+moveBallUp:
   lda pixel4
   sub #$10
   sta pixel4
 
-checkBoundsY
+checkBoundsY:
   lda pixel4
   and #$f0
   bne isBallBottom
@@ -81,14 +81,14 @@ checkBoundsY
   sta dirY
   bne imDone
 
-isBallBottom
+isBallBottom:
   sub #$f0
   bne imDone
 
   lda #0
   sta dirY
 
-imDone
+imDone:
   lda pixel4
   and #$f
   bne isBallLeft
@@ -104,7 +104,7 @@ imDone
   lda #0
   beq yeah
 
-isBallLeft
+isBallLeft:
   sub #$f
   bne yeah
   lda dirX
@@ -116,12 +116,12 @@ isBallLeft
   add #$10
   sta pixel4
 
-yeah
+yeah:
   lda pixel4
   and #$f0
   sta flags
 
-checkCollisionPixel0
+checkCollisionPixel0:
   lda pixel4
   dec
   sub pixel0
@@ -132,7 +132,7 @@ checkCollisionPixel0
   dec
   sta dirY
 
-checkCollisionPixel1
+checkCollisionPixel1:
   lda pixel4
   dec
   sub pixel1
@@ -142,7 +142,7 @@ checkCollisionPixel1
   sta dirX
   sta dirY
 
-checkCollisionPixel2
+checkCollisionPixel2:
   lda pixel4
   inc
   sub pixel2
@@ -152,7 +152,7 @@ checkCollisionPixel2
   sta dirX
   sta dirY
 
-checkCollisionPixel3
+checkCollisionPixel3:
   lda pixel4
   inc
   sub pixel3
@@ -163,7 +163,7 @@ checkCollisionPixel3
   inc
   sta dirY
 
-movePixel2
+movePixel2:
   lda pixel2
   and #$f0
   sub flags
@@ -176,7 +176,7 @@ movePixel2
   sub #$10
   sta pixel2
 
-movePixel3
+movePixel3:
   lda pixel3
   and #$f0
   sub flags
@@ -189,15 +189,15 @@ movePixel3
   add #$10
   sta pixel2
 
-setPixel3
+setPixel3:
   lda pixel2
   add #$10
   sta pixel3
   
-endVBlank
+endVBlank:
   lda #0
   sta flags
-wait
+wait:
   lda flags
   beq wait
   jmp start

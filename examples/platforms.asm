@@ -15,7 +15,7 @@ jump   = $6
 rand   = $7
 
 ; code
-reset
+reset:
     lda #$d7
     sta pixel0
     lda #$e6
@@ -25,7 +25,7 @@ reset
     lda #$80
     sta jump
 
-start
+start:
     lda rand
     add #$b6
     sta rand
@@ -44,12 +44,12 @@ start
     lda #$0b
     sta jump
 
-isPause
+isPause:
     lda jump
     and #$40
     bne reset
 
-moveLeft
+moveLeft:
     lda flags
     and #inpLeft
     beq moveRight
@@ -66,7 +66,7 @@ moveLeft
     dec
     sta pixel0
 
-moveRight
+moveRight:
     lda flags
     and #inpRight
     beq decJump
@@ -84,7 +84,7 @@ moveRight
     inc
     sta pixel0
 
-decJump
+decJump:
     lda jump
     and #$f
     beq moveDown
@@ -102,7 +102,7 @@ decJump
     sub #$10
     sta pixel0
     jmp updatePlatforms
-scroll
+scroll:
     lda pixel1
     add #$10
     sta pixel1
@@ -114,7 +114,7 @@ scroll
     and #$f
     sta pixel1
 
-scroll0
+scroll0:
     lda pixel3
     add #$10
     sta pixel3
@@ -128,7 +128,7 @@ scroll0
 
     jmp updatePlatforms
 
-moveDown
+moveDown:
     lda pixel0
     add #$10
     sta pixel0
@@ -138,7 +138,7 @@ moveDown
     lda #$c0
     sta jump
 
-updatePlatforms
+updatePlatforms:
     lda pixel1
     inc
     sta pixel2
@@ -150,7 +150,7 @@ updatePlatforms
     and #$f
     bne collisionFalse
 
-checkCollisions
+checkCollisions:
     lda pixel0
     sub pixel1
     beq collisionTrue
@@ -166,7 +166,7 @@ checkCollisions
     lda pixel0
     sub pixel4
     bne collisionFalse
-collisionTrue
+collisionTrue:
     lda #$80
     sta jump
 
@@ -175,15 +175,15 @@ collisionTrue
     sta pixel0
 
     jmp endVBlank
-collisionFalse
+collisionFalse:
     lda jump
     and #$4f
     sta jump
 
-endVBlank
+endVBlank:
     lda #0
     sta flags
-wait
+wait:
     lda flags
     beq wait
     jmp start

@@ -15,11 +15,11 @@ rand     = $6
 jumpTime = $7
 
 ; code
-reset
+reset:
   lda #$1
   sta pixel2
 
-start
+start:
   lda pixel2
   and #$1
   bne isPause
@@ -33,24 +33,24 @@ start
 
   lda #0
   beq incRand
-isPause
+isPause:
   dec
   sta pixel3
   lda #$8
   sta pixel4
 
-incRand
+incRand:
   lda rand
   add #$d6
   sta rand
 
-decJump
+decJump:
   lda jumpTime
   beq inputJump
   dec
   sta jumpTime
 
-inputJump
+inputJump:
   lda flags
   and #inpUp
   beq notJumping
@@ -72,12 +72,12 @@ inputJump
   lda #$2
   sta pixel2
   bne inputCrouch
-notJumping
+notJumping:
   lda pixel2
   and #$1
   sta pixel2
 
-inputCrouch
+inputCrouch:
   lda flags
   and #inpDown
   beq stand
@@ -97,13 +97,13 @@ inputCrouch
   sta pixel0
   sta pixel1
   bne checkJumpTime
-stand
+stand:
   lda #$c2
   sta pixel0
   add #$10
   sta pixel1
 
-checkJumpTime
+checkJumpTime:
   lda jumpTime
   beq isCrouching
 
@@ -112,7 +112,7 @@ checkJumpTime
   add #$10
   sta pixel1
   bne movePixel3
-isCrouching
+isCrouching:
   lda $1
   sub #$d2
   beq movePixel3
@@ -122,7 +122,7 @@ isCrouching
   add #$10
   sta pixel1
 
-movePixel3
+movePixel3:
   lda pixel3
   and #$f
   bne movePixel4
@@ -134,11 +134,11 @@ movePixel3
   lda #$cf
   sta pixel3
   bne movePixel4
-lowPixel3
+lowPixel3:
   lda #$df
   sta pixel3
 
-movePixel4
+movePixel4:
   lda pixel4
   and #$f
   bne checkCollisions
@@ -150,11 +150,11 @@ movePixel4
   lda #$cf
   sta pixel4
   bne checkCollisions
-lowPixel4
+lowPixel4:
   lda #$df
   sta pixel4
 
-checkCollisions
+checkCollisions:
   lda pixel3
   sub pixel0
   beq collisionTrue
@@ -170,16 +170,16 @@ checkCollisions
   lda pixel4
   sub pixel1
   bne endVBlank
-collisionTrue
+collisionTrue:
   lda pixel2
   and #$2
   inc
   sta pixel2
   
-endVBlank
+endVBlank:
   lda #0
   sta flags
-wait
+wait:
   lda flags
   beq wait
   jmp start
