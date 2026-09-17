@@ -15,6 +15,8 @@ jump   = $6
 rand   = $7
 
 ; code
+    .org $8
+
 reset:
     lda #$d7
     sta pixel0

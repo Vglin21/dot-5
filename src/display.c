@@ -153,6 +153,7 @@ bool display_is_gamepad_pressed(DisplayGamepadButton button) { return button < 1
 bool display_is_frame_active() { return accumulator >= target_time_step; }
 bool display_is_fullscreen() { return SDL_GetWindowFlags(screen) & SDL_WINDOW_FULLSCREEN; }
 bool display_is_gamepad_connected() { return gamepad != NULL; }
+bool display_is_resizable() { return SDL_GetWindowFlags(screen) & SDL_WINDOW_RESIZABLE; }
 
 bool display_set_signal_size(word width, word height, word hblank, word vblank) {
     if (screen) {
@@ -208,6 +209,7 @@ void display_set_aspect_ratio(double ar) {
 }
 void display_set_window_size(dword width, dword height) { SDL_SetWindowSize(screen, width, height); }
 void display_set_fullscreen(bool fullscreen) { SDL_SetWindowFullscreen(screen, fullscreen); }
+void display_set_resizable(bool resizable) { SDL_SetWindowResizable(screen, resizable); }
 
 void display_draw_pixel(dword color) {
     if (signal) {

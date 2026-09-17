@@ -152,12 +152,14 @@ extern bool display_is_gamepad_pressed(DisplayGamepadButton button);
 extern bool display_is_frame_active();
 extern bool display_is_fullscreen();
 extern bool display_is_gamepad_connected();
+extern bool display_is_resizable();
 
 extern bool display_set_signal_size(word width, word height, word hblank, word vblank);
 extern void display_set_fps(double fps);
 extern void display_set_aspect_ratio(double aspect_ratio);
 extern void display_set_window_size(dword width, dword height);
 extern void display_set_fullscreen(bool fullscreen);
+extern void display_set_resizable(bool resizable);
 
 extern void display_draw_pixel(dword color);
 extern void display_draw_pixels(dword color, dword count);

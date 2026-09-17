@@ -230,11 +230,13 @@ static void configure() {
     config.display.fullscreen = (v = cfg_get_value("fullscreen")) ? !strcmp(v, "true") : false;
     config.display.width      = (v = cfg_get_value("window_width")) ? atoi(v) : 480;
     config.display.height     = (v = cfg_get_value("window_height")) ? atoi(v) : 480;
+    config.display.resizable = (v = cfg_get_value("resizable")) ? !strcmp(v, "true") : false;
 
     config.emulation_speed = (v = cfg_get_value("emulation_speed")) ? atof(v) : 1.0;
 
-    config.rendering.background = (v = cfg_get_value("background_color")) ? (hex_to_int(v) << 8) + 0xff : 0xe7e7e7ff;
-    config.rendering.pixel      = (v = cfg_get_value("pixel_color")) ? (hex_to_int(v) << 8) + 0xff : 0x070707ff;
+    config.rendering.background   = (v = cfg_get_value("background_color")) ? (hex_to_int(v) << 8) + 0xff : 0xe7e7e7ff;
+    config.rendering.pixel        = (v = cfg_get_value("pixel_color")) ? (hex_to_int(v) << 8) + 0xff : 0x070707ff;
+    config.rendering.aspect_ratio = (v = cfg_get_value("aspect_ratio")) ? atof(v) : 1.0;
 
     config.input.key.up    = (v = cfg_get_value("input_key_up")) ? get_key(v) : DISPK_UP;
     config.input.key.left  = (v = cfg_get_value("input_key_left")) ? get_key(v) : DISPK_LEFT;
@@ -327,9 +329,12 @@ bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
 
 void d5_run() {
     display_turn_on("DOT-5", config.display.width, config.display.height, DISPLAY_TYPE_LCD);
-    display_set_fullscreen(config.display.fullscreen);
     
+    if (config.rendering.aspect_ratio != 0.0)
+        display_set_aspect_ratio(config.rendering.aspect_ratio);
+    display_set_fullscreen(config.display.fullscreen);
     display_set_fps(11.97 * config.emulation_speed);
+    display_set_resizable(config.display.resizable);
     
     display_set_signal_size(16, 16, 0, 0);
     
