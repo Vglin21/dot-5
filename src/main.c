@@ -48,7 +48,7 @@ char cfg[] = "# Display\n"
 #define strcpy(a, b) wcscpy(a, b)
 #define fopen(a, b) _wfopen(a, b)
 #define mkdir(a) _wmkdir(a)
-#define sprintf(a, b, c, d) swprintf(a, b, c, d)
+#define snprintf(a, b, c, d) swprintf(a, b, c, d)
 #define d5_load(a, b) d5_load_w(a, b)
 
 #elif defined(__linux)
@@ -57,6 +57,9 @@ char cfg[] = "# Display\n"
 #define s(a) a
 #define get_cfg_path getenv("HOME")
 #define sfmt "%s/"
+
+#define snprintf(a, b, c, d) snprintf(a, b, c, d)
+#define mkdir(a) mkdir(a, 0700)
 
 #endif
 
@@ -100,13 +103,13 @@ int main(int argc, char *argv[]) {
     
             if (cfg_path) {
 #ifdef _WIN32
-                sprintf(cfg_file, 512, s(""sfmt"DOT-5"), cfg_path);
+                snprintf(cfg_file, 512, s(""sfmt"DOT-5"), cfg_path);
 #else
-                sprintf(cfg_file, 512, s(""sfmt".config/DOT-5"), cfg_path);
+                snprintf(cfg_file, 512, s(""sfmt".config/DOT-5"), cfg_path);
 #endif
                 mkdir(cfg_file);
                 
-                sprintf(cfg_file, 512, s(""sfmt"dot-5.cfg"), cfg_file);
+                snprintf(cfg_file, 512, s(""sfmt"dot-5.cfg"), cfg_file);
             } else strcpy(cfg_file, s("dot-5.cfg"));
     
             if (!(file = fopen(cfg_file, s("r")))) {

@@ -28,7 +28,7 @@ word lpos = 0;
 #ifdef _WIN32
 wchar_t *src_file = NULL;
 #else
-char src_file = NULL;
+char *src_file = NULL;
 #endif
 
 char serr[MAX_LINE_LEN];
