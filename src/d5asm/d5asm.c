@@ -435,6 +435,7 @@ void read_label() {
 
 void to_bin(Symbol symb) {
     if (symb.name[0] == '.') {
+        // for fuck's sake it's 2 AM and i'm SLEEPY give me some slack
         if (!strcmp(symb.name, ".ORG")) {
             if (bin_count != 0) bin_count = (symb.arg - bin_addr);
             bin_addr = (symb.arg - bin_addr);
