@@ -102,14 +102,15 @@ int main(int argc, char *argv[]) {
             char *cfg_path = get_cfg_path;
     
             if (cfg_path) {
+                char cfg_buf[512];
 #ifdef _WIN32
-                snprintf(cfg_file, 512, s(""sfmt"DOT-5"), cfg_path);
+                snprintf(cfg_buf, 512, s(""sfmt"DOT-5"), cfg_path);
 #else
-                snprintf(cfg_file, 512, s(""sfmt".config/DOT-5"), cfg_path);
+                snprintf(cfg_buf, 512, s(""sfmt".config/DOT-5"), cfg_path);
 #endif
-                mkdir(cfg_file);
+                mkdir(cfg_buf);
                 
-                snprintf(cfg_file, 512, s(""sfmt"dot-5.cfg"), cfg_file);
+                snprintf(cfg_file, 512, s(""sfmt"dot-5.cfg"), cfg_buf);
             } else strcpy(cfg_file, s("dot-5.cfg"));
     
             if (!(file = fopen(cfg_file, s("r")))) {
