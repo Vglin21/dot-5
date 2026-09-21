@@ -43,6 +43,7 @@ cmake --build build
 ```sh
 # Clone the repository
 git clone https://github.com/Vglin21/dot-5
+cd dot-5
 
 # Configure and compile the emulator
 emcmake cmake -B build-web
