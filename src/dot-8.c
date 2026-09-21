@@ -1,4 +1,4 @@
-#include <dot-5/dot-5.h>
+#include <dot-8/dot-8.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -252,7 +252,7 @@ static void configure() {
     config.input.fullscreen = (v = cfg_get_value("toggle_fullscreen")) ? get_input(v) : DISPK_F;
 }
 
-static void d5_frame() {
+static void d8_frame() {
     while (display_is_frame_active()) {
 #ifndef __EMSCRIPTEN__
         if (display_is_key_pressed(config.input.exit)) display_close();
@@ -304,7 +304,7 @@ static void d5_frame() {
 #endif
 }
 
-bool d5_load(const char *bin_filepath, const char *config_filepath) {
+bool d8_load(const char *bin_filepath, const char *config_filepath) {
     if (bin_filepath) {
         if (!mem_load_rom_from_file(bin_filepath)) return false;
     } else return false;
@@ -315,7 +315,7 @@ bool d5_load(const char *bin_filepath, const char *config_filepath) {
     return true;
 }
 #ifdef _WIN32
-bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
+bool d8_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
     if (bin_filepath) {
         if (!mem_load_rom_from_file_w(bin_filepath)) return false;
     } else return false;
@@ -327,8 +327,8 @@ bool d5_load_w(const wchar_t *bin_filepath, const wchar_t *config_filepath) {
 }
 #endif
 
-void d5_run() {
-    display_turn_on("DOT-5", config.display.width, config.display.height, DISPLAY_TYPE_LCD);
+void d8_run() {
+    display_turn_on("DOT-8", config.display.width, config.display.height, DISPLAY_TYPE_LCD);
     
     if (config.rendering.aspect_ratio != 0.0)
         display_set_aspect_ratio(config.rendering.aspect_ratio);
@@ -342,15 +342,15 @@ void d5_run() {
     beam = 0;
     
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(d5_frame, 0, 1);
+    emscripten_set_main_loop(d8_frame, 0, 1);
 #else
-    while (!display_should_close()) d5_frame();
+    while (!display_should_close()) d8_frame();
 #endif
 
     display_turn_off();
 }
 
-void d5_configure(const char *key, const char *value) {
+void d8_configure(const char *key, const char *value) {
     cfg_set_value(key, value);
     configure();
 }

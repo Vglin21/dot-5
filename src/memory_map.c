@@ -1,4 +1,4 @@
-#include <dot-5/memory_map.h>
+#include <dot-8/memory_map.h>
 #include <stdio.h>
 
 static byte memory[0x100] = {0};
