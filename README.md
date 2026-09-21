@@ -32,6 +32,7 @@ Probably one of the worst fantasy consoles ever made.
 ```sh
 # Clone the repository
 git clone https://github.com/Vglin21/dot-5
+cd dot-5
 
 # Configure and compile the emulator
 cmake -B build
