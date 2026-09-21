@@ -1,4 +1,4 @@
-#include <dot-8/config.h>
+#include <dot-5/config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,4 +1,4 @@
-#include <dot-8/dot-8.h>
+#include <dot-5/dot-5.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -49,7 +49,7 @@ char cfg[] = "# Display\n"
 #define fopen(a, b) _wfopen(a, b)
 #define mkdir(a) _wmkdir(a)
 #define snprintf(a, b, c, d) swprintf(a, b, c, d)
-#define d8_load(a, b) d8_load_w(a, b)
+#define d5_load(a, b) d5_load_w(a, b)
 
 #elif defined(__linux)
 #include <sys/stat.h>
@@ -65,7 +65,7 @@ char cfg[] = "# Display\n"
 
 #ifdef __EMSCRIPTEN__
 int main(int argc, char *argv[]) {
-    if (!d5_load("rom.d8", "dot-8.cfg")) return 1;
+    if (!d5_load("rom.d5", "dot-5.cfg")) return 1;
 
     d5_run();
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 
     for (byte c = 1; c < argc; ++c) {
         if (!strcmp(argv[c], s("-f")) || !strcmp(argv[c], s("--fullscreen")))
-            d8_configure("fullscreen", "true");
+            d5_configure("fullscreen", "true");
         else if (!strcmp(argv[c], s("-c")) || !strcmp(argv[c], s("--config"))) {
             if (++c < argc) {
                 if (file = fopen(argv[c], s("r"))) {
@@ -95,8 +95,8 @@ int main(int argc, char *argv[]) {
     if (!bin_file) return 1;
     
     if (!cfg_file[0]) {
-        if (file = fopen(s("dot-8.cfg"), s("r"))) {
-            strcpy(cfg_file, s("dot-8.cfg"));
+        if (file = fopen(s("dot-5.cfg"), s("r"))) {
+            strcpy(cfg_file, s("dot-5.cfg"));
             fclose(file);
         } else {
             char *cfg_path = get_cfg_path;
@@ -104,13 +104,13 @@ int main(int argc, char *argv[]) {
             if (cfg_path) {
                 char cfg_buf[512];
 #ifdef _WIN32
-                snprintf(cfg_buf, 512, s(""sfmt"DOT-8"), cfg_path);
+                snprintf(cfg_buf, 512, s(""sfmt"DOT-5"), cfg_path);
 #else
-                snprintf(cfg_buf, 512, s(""sfmt".config/DOT-8"), cfg_path);
+                snprintf(cfg_buf, 512, s(""sfmt".config/DOT-5"), cfg_path);
 #endif
                 mkdir(cfg_buf);
                 
-                snprintf(cfg_file, 512, s(""sfmt"dot-8.cfg"), cfg_buf);
+                snprintf(cfg_file, 512, s(""sfmt"dot-5.cfg"), cfg_buf);
             } else strcpy(cfg_file, s("dot-5.cfg"));
     
             if (!(file = fopen(cfg_file, s("r")))) {
@@ -123,9 +123,9 @@ int main(int argc, char *argv[]) {
         }
     }
     
-    if (!d8_load(bin_file, cfg_file)) return 1;
+    if (!d5_load(bin_file, cfg_file)) return 1;
 
-    d8_run();
+    d5_run();
 
     return 0;
 }
