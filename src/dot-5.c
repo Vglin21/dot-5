@@ -340,6 +340,8 @@ void d5_run() {
     
     fullscreen = false;
     beam = 0;
+
+    cpu_reset();
     
 #ifdef __EMSCRIPTEN__
     emscripten_set_main_loop(d5_frame, 0, 1);
